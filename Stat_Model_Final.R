@@ -257,54 +257,6 @@ surface3d(t.train, x.train, y.train, col='green', alpha = .4, front = "line", ba
 surface3d(t.train, x.train, matrix(0, nt.train, nx.train), col='blue', alpha = .2, front = "line", back = "line")
 surface3d(t.train, x.train, matrix(as.vector(y.full), nt.train, nx.train), col='orange', alpha = .4)
 
-# 
-# ### Gibbs Regression Estimation
-# M = 5000
-# at2 = 1
-# bt2 = 1
-# t2.cont = rigamma(1, alpha = at2/2, beta = bt2/2)
-# t2.back = rigamma(1, alpha = at2/2, beta = bt2/2)
-# B.cont.gibbs.track = matrix(0,p,M)
-# t2.cont.gibbs.track = rep(0,M)
-# B.back.gibbs.track = matrix(0,p,M)
-# t2.back.gibbs.track = rep(0,M)
-# 
-# for(i in 1:M){
-#   # B
-#   varB.cont = solve(t(Z.train[St.cont,]) %*% Z.train[St.cont,] + diag(1/t2.cont, p))
-#   meanB.cont = varB.cont %*% t(Z.train[St.cont,]) %*% y.train.vec[St.cont]
-#   B.cont.gibbs = chol(varB.cont) %*% rnorm(p) + meanB.cont
-#   
-#   # t2
-#   t2.cont.gibbs = rigamma(1, alpha = (p + at2)/2, beta = 0.5 * (t(B.cont.gibbs) %*% B.cont.gibbs + bt2))
-#   
-#   B.cont.gibbs.track[,i] = B.cont.gibbs
-#   t2.cont.gibbs.track[i] = t2.cont.gibbs
-#   
-#   # B
-#   varB.back = solve(t(Z.train[St.back,]) %*% Z.train[St.back,] + diag(1/t2.back, p))
-#   meanB.back = varB.back %*% t(Z.train[St.back,]) %*% y.train.vec[St.back]
-#   B.back.gibbs = chol(varB.back) %*% rnorm(p) + meanB.back
-#   
-#   # t2
-#   t2.back.gibbs = rigamma(1, alpha = (p + at2)/2, beta = 0.5 * (t(B.back.gibbs) %*% B.back.gibbs + bt2))
-#   
-#   B.back.gibbs.track[,i] = B.back.gibbs
-#   t2.back.gibbs.track[i] = t2.back.gibbs
-#   
-#   if(i %% 100 == 0){print(i)}
-# }
-# 
-# B.cont.gibbs.mean  = apply(B.cont.gibbs.track[,2500:M], 1, mean)
-# t2.cont.gibbs.mean  = mean(t2.cont.gibbs.track[2500:M])
-# B.back.gibbs.mean  = apply(B.back.gibbs.track[,2500:M], 1, mean)
-# t2.back.gibbs.mean  = mean(t2.back.gibbs.track[2500:M])
-# 
-# y.fromB.gibbs = matrix(0,nx.train*nt.train,1)
-# y.fromB.gibbs[St.cont] = Z.train[St.cont,] %*% B.cont.gibbs.mean
-# y.fromB.gibbs[St.back] = Z.train[St.back,] %*% B.back.gibbs.mean
-# 
-# MSE.fromB.gibbs = sum((y.train.vec - y.fromB.gibbs)**2)
 
 ### Least Squares
 B.cont = ginv(t(Z.train[St.cont,]) %*% Z.train[St.cont,], 1e-20) %*% t(Z.train[St.cont,]) %*% y.train.vec[St.cont]
@@ -316,84 +268,6 @@ y.fromB[St.back] = Z.train[St.back,] %*% B.back
 
 MSE.fromB = sum((y.train.vec - y.fromB)**2)
 
-# 
-# ### Lasso Regression
-# p.lasso = 45
-# par.lasso = rep(0, p.lasso)
-# lam.lasso = seq(.1,5.1,.2)
-# K.fold = 6
-# 
-# # Contango
-# y.lasso.cont = y.train.vec[St.cont]
-# z.lasso.cont = Z.train[St.cont,]
-# n.train = length(y.train.vec[St.cont])
-# ind.mat = matrix(0, K.fold, n.train/K.fold)
-# sample.lasso.full = 1:n.train
-# sample.lasso = sample.lasso.full
-# 
-# for(i in 1:K.fold){
-#   ind.mat[i,] = sample(x = sample.lasso, size = n.train/K.fold)
-#   sample.lasso = sample.lasso.full[-ind.mat[1:i,]]
-# }
-# 
-# MSE.lasso = matrix(0, K.fold, length(lam.lasso))
-# 
-# for(i in 1:K.fold){
-#   for(j in 1:length(lam.lasso)){
-#     par.opt.lasso = nlminb(start = par.lasso, RSSB.lasso, y = y.lasso.cont[ind.mat[i,]], z = z.lasso.cont[ind.mat[i,],], lam = lam.lasso[j], control = list(iter.max = 100, trace = 0))
-#     B.lasso = par.opt.lasso$par
-#     
-#     MSE.lasso[i,j] = mean((y.lasso.cont[-ind.mat[i,]] - z.lasso.cont[-ind.mat[i,],] %*% as.matrix(B.lasso))**2)
-# #     print(i)
-#   }
-# }
-# 
-# MSE.lasso = apply(MSE.lasso, 2, sum)
-# 
-# par(mfrow = c(1,1))
-# plot(lam.lasso, MSE.lasso)
-# lam.min = lam.lasso[which.min(MSE.lasso)]
-# par.opt.lasso = nlminb(start = par.lasso, RSSB.lasso, y = y.lasso.cont, z = z.lasso.cont, lam = lam.min, control = list(iter.max = 100, trace = 0))
-# B.cont.lasso = par.opt.lasso$par
-# 
-# # Backwardation
-# y.lasso.back = y.train.vec[St.back]
-# z.lasso.back = Z.train[St.back,]
-# n.train = length(y.train.vec[St.back])
-# ind.mat = matrix(0, K.fold, n.train/K.fold)
-# sample.lasso.full = 1:n.train
-# sample.lasso = sample.lasso.full
-# 
-# for(i in 1:K.fold){
-#   ind.mat[i,] = sample(x = sample.lasso, size = n.train/K.fold)
-#   sample.lasso = sample.lasso.full[-ind.mat[1:i,]]
-# }
-# 
-# MSE.lasso = matrix(0, K.fold, length(lam.lasso))
-# 
-# for(i in 1:K.fold){
-#   for(j in 1:length(lam.lasso)){
-#     par.opt.lasso = nlminb(start = par.lasso, RSSB.lasso, y = y.lasso.back[ind.mat[i,]], z = z.lasso.back[ind.mat[i,],], lam = lam.lasso[j], control = list(iter.max = 100, trace = 0))
-#     B.lasso = par.opt.lasso$par
-#     
-#     MSE.lasso[i,j] = mean((y.lasso.back[-ind.mat[i,]] - z.lasso.back[-ind.mat[i,],] %*% as.matrix(B.lasso))**2)
-#     print(i)
-#   }
-# }
-# 
-# MSE.lasso = apply(MSE.lasso, 2, sum)
-# 
-# par(mfrow = c(1,1))
-# plot(lam.lasso, MSE.lasso)
-# lam.min = lam.lasso[which.min(MSE.lasso)]
-# par.opt.lasso = nlminb(start = par.lasso, RSSB.lasso, y = y.lasso.back, z = z.lasso.back, lam = lam.min, control = list(iter.max = 100, trace = 0))
-# B.back.lasso = par.opt.lasso$par
-# 
-# y.fromB.lasso = matrix(0,nx.train*nt.train,1)
-# y.fromB.lasso[St.cont] = Z.train[St.cont,] %*% B.cont.lasso
-# y.fromB.lasso[St.back] = Z.train[St.back,] %*% B.back.lasso
-# 
-# MSE.fromB.lasso = sum((y.train.vec - y.fromB.lasso)**2)
 
 ### Gaussian Process
 K.train = matrix(0,nx.train*nt.train,nx.train*nt.train)
@@ -455,73 +329,8 @@ MSE.fromB
 MSE.all
 MSE.GPOnly
 # 
-# MSE = c(MSE.full, MSE.fromB, MSE.fromB.gibbs, MSE.fromB.lasso, MSE.all, MSE.GP0nly)
-# pdf('Plot_ModelError.pdf', width = 12, height = 9)
-# par(mfrow = c(1,1))
-# lab = c('Full', 'LS', 'Gibbs', 'Lasso', 'LS - GP', 'GP')
-# barplot(MSE, , axisnames = TRUE, names.arg = lab, main = 'Model Error')
-# dev.off()
-# 
-# pdf('Plot_ContCoeffs_LS_Lasso.pdf', width = 12, height = 9)
-# par(mfrow = c(2,2), oma = c(0, 0, 3, 0))
-# plot(B.cont[2:12], main = 'Imports', xlab = 'Month', ylab = 'Beta')
-# points(B.cont.lasso[2:12], col = 'red', pch = 3)
-# abline(h = 0, col = 'grey')
-# plot(B.cont[13:23], main = 'Demand', xlab = 'Month', ylab = 'Beta')
-# points(B.cont.lasso[13:23], col = 'red', pch = 3)
-# abline(h = 0, col = 'grey')
-# plot(B.cont[24:34], main = 'Stocks', xlab = 'Month', ylab = 'Beta')
-# points(B.cont.lasso[24:34], col = 'red', pch = 3)
-# abline(h = 0, col = 'grey')
-# plot(B.cont[35:45], main = 'Refining', xlab = 'Month', ylab = 'Beta')
-# points(B.cont.lasso[35:45], col = 'red', pch = 3)
-# abline(h = 0, col = 'grey')
-# mtext("Contango Coeffcients - LS and Lasso", outer = TRUE, cex = 1.5)
-# dev.off()
-# 
-# pdf('Plot_BackCoeffs_LS_Lasso.pdf', width = 12, height = 9)
-# par(mfrow = c(2,2), oma = c(0, 0, 3, 0))
-# plot(B.back[2:12], main = 'Imports', xlab = 'Month', ylab = 'Beta', ylim = c(-1.5, 1.4))
-# points(B.back.lasso[2:12], col = 'red', pch = 3)
-# abline(h = 0, col = 'grey')
-# plot(B.back[13:23], main = 'Demand', xlab = 'Month', ylab = 'Beta')
-# points(B.back.lasso[13:23], col = 'red', pch = 3)
-# abline(h = 0, col = 'grey')
-# plot(B.back[24:34], main = 'Stocks', xlab = 'Month', ylab = 'Beta')
-# points(B.back.lasso[24:34], col = 'red', pch = 3)
-# abline(h = 0, col = 'grey')
-# plot(B.back[35:45], main = 'Refining', xlab = 'Month', ylab = 'Beta')
-# points(B.back.lasso[35:45], col = 'red', pch = 3)
-# abline(h = 0, col = 'grey')
-# mtext("Backwardation Coeffcients - LS and Lasso", outer = TRUE, cex = 1.5)
-# dev.off()
-# 
-# pdf('Plot_ContCoeffs_Gibbs.pdf', width = 12, height = 9)
-# par(mfrow = c(2,2), oma = c(0, 0, 3, 0))
-# plot(B.cont.gibbs[2:12], main = 'Imports', xlab = 'Month', ylab = 'Beta', ylim = c(-1.5, 1.4))
-# abline(h = 0, col = 'grey')
-# plot(B.cont.gibbs[13:23], main = 'Demand', xlab = 'Month', ylab = 'Beta')
-# abline(h = 0, col = 'grey')
-# plot(B.cont.gibbs[24:34], main = 'Stocks', xlab = 'Month', ylab = 'Beta')
-# abline(h = 0, col = 'grey')
-# plot(B.cont.gibbs[35:45], main = 'Refining', xlab = 'Month', ylab = 'Beta')
-# abline(h = 0, col = 'grey')
-# mtext("Contango Coeffcients - Gibbs", outer = TRUE, cex = 1.5)
-# dev.off()
-# 
-# pdf('Plot_BackCoeffs_Gibbs.pdf', width = 12, height = 9)
-# par(mfrow = c(2,2), oma = c(0, 0, 3, 0))
-# plot(B.back.gibbs[2:12], main = 'Imports', xlab = 'Month', ylab = 'Beta', ylim = c(-1.5, 1.4))
-# abline(h = 0, col = 'grey')
-# plot(B.back.gibbs[13:23], main = 'Demand', xlab = 'Month', ylab = 'Beta')
-# abline(h = 0, col = 'grey')
-# plot(B.back.gibbs[24:34], main = 'Stocks', xlab = 'Month', ylab = 'Beta')
-# abline(h = 0, col = 'grey')
-# plot(B.back.gibbs[35:45], main = 'Refining', xlab = 'Month', ylab = 'Beta')
-# abline(h = 0, col = 'grey')
-# mtext("Contango Coeffcients - Gibbs", outer = TRUE, cex = 1.5)
-# dev.off()
-# 
+
+
 # pdf('Plot_Coeffs_GP_Full.pdf', width = 12, height = 9)
 # par(mfrow = c(2,2), oma = c(0, 0, 3, 0))
 # plot(B.GP[2:12], main = 'Imports', xlab = 'Month', ylab = 'Beta', ylim = c(-1.5, 1.4))
@@ -561,163 +370,147 @@ MSE.GPOnly
 # 
 # ### Next Step is in contango
 # 
-# ### Predict Bayes
-# 
-# y.pred = y.test[52,]
-# z.pred = Z.test[which(t.vec.test == 52),]
-# 
-# 
-# # Full
-# y.pred.full = z.pred %*% B.full
-# y.pred.B = z.pred %*% B.cont
+### Predict Bayes
+
+y.pred = y.test[52,]
+z.pred = Z.test[which(t.vec.test == 52),]
+
+
+# Full
+y.pred.full = z.pred %*% B.full
+y.pred.B = z.pred %*% B.cont
 # y.pred.gibbs = z.pred %*% B.cont.gibbs
 # y.pred.lasso = z.pred %*% B.cont.lasso
-# y.pred.GP = z.pred %*% B.GP
-# 
-# ### Prediction linear plus GP
-# y.forGP = y.train.vec - y.fromB
-# K = matrix(0,nx.train*nt.train,nx.train*nt.train)
-# K.GPFull = matrix(0, nrow(K), ncol(K))
-# par.GPFull = c(10, 5, 1, 5)
-# sig2 = 1
-# sig2.diag = diag(1/sig2, nx.train*nt.train, nx.train*nt.train)
-# par.opt = GPparam.opt(par.GPFull, y.forGP, nx.train, nt.train, x.vec.train, t.vec.train, sig2, K.GPFull)
-# par.GPFull = par.opt
-# 
-# K = matrix(0,nx.train*nt.train,nx.train*nt.train)
-# K.GP = matrix(0, nrow(K), ncol(K))
-# K.GP = K_Calc.cpp(par.GPFull, x.vec.train, t.vec.train, K.GP) + sig2.diag
-# K.GP.inv = ginv(K.GP, 1e-20)
-# B.GP = solve(t(Z.train) %*% K.GP.inv %*% Z.train) %*% t(Z.train) %*% K.GP.inv %*% y.forGP
-# 
-# g.star.GPadd = rep(0,11)
-# 
-# for(i in 1:11){
-#   x.vec.pred = c(x.vec.train, (1:11)[-i])
-#   t.vec.pred = c(t.vec.train, rep(53,10))
-#   sig2 = 1
-#   sig2.diag = diag(1/sig2, 582, 582)
-#   K = matrix(0,582,582)
-#   K.GP = matrix(0, nrow(K), ncol(K))
-#   K.GP = K_Calc.cpp(par.GPFull, x.vec.pred, t.vec.pred, K.GP) + sig2.diag
-#   K.GP.inv = ginv(K.GP, 1e-20)
-#   
-#   x.vec.pred = c(x.vec.train, (1:11)[-i], (1:11)[i])
-#   t.vec.pred = c(t.vec.train, rep(53,11))
-#   
-#   K.pre = matrix(0, (583),(583))
-#   K.pre = K_Calc.cpp(par.GPFull, x.vec.pred, t.vec.pred, K.pre)
-#   
-#   K.star = as.matrix(K.pre[,583][1:(582)])
-#   
-#   y.pred.vec = c(y.forGP, matrix(y.forGP, nt.train, nx.train)[1,][-i])
-#   f.star = t(K.star) %*% (K.GP.inv) %*% y.pred.vec
-#   H.star = Z.test[which(t.vec.test == 52)[i],]
-#   Z.pred = rbind(Z.train, Z.test[which(t.vec.test == 52)[-i],])
-#   
-#   R.pred = H.star - t(Z.pred) %*% K.GP.inv %*% K.star
-#   g.star.GPadd[i] = f.star + t(R.pred) %*% B.GP
-# }
-# 
-# y.pred.BGP = y.pred.B + g.star.GPadd
-# points(y.pred.B + g.star.GPadd)
-# 
-# ### Prediction just GP
-# K = matrix(0,nx.train*nt.train,nx.train*nt.train)
-# K.GPFull = matrix(0, nrow(K), ncol(K))
-# par.GPFull = c(10, 5, 1, 5)
-# sig2 = 1
-# sig2.diag = diag(1/sig2, nx.train*nt.train, nx.train*nt.train)
-# par.opt = GPparam.opt(par.GPFull, y.train.vec, nx.train, nt.train, x.vec.train, t.vec.train, sig2, K.GPFull)
-# par.GPFull = par.opt
-# 
-# K = matrix(0,nx.train*nt.train,nx.train*nt.train)
-# K.GP = matrix(0, nrow(K), ncol(K))
-# K.GP = K_Calc.cpp(par.GPFull, x.vec.train, t.vec.train, K.GP) + sig2.diag
-# K.GP.inv = ginv(K.GP, 1e-20)
-# B.GP = solve(t(Z.train) %*% K.GP.inv %*% Z.train) %*% t(Z.train) %*% K.GP.inv %*% y.train.vec
-# 
-# 
-# 
-# 
-# 
-# g.star = rep(0,11)
-# for(i in 1:11){
-#   x.vec.pred = c(x.vec.train, (1:11)[-i])
-#   t.vec.pred = c(t.vec.train, rep(53,10))
-#   sig2 = 1
-#   sig2.diag = diag(1/sig2, 582, 582)
-#   K = matrix(0,582,582)
-#   K.GP = matrix(0, nrow(K), ncol(K))
-#   K.GP = K_Calc.cpp(par.GPFull, x.vec.pred, t.vec.pred, K.GP) + sig2.diag
-#   K.GP.inv = ginv(K.GP, 1e-20)
-#   
-#   x.vec.pred = c(x.vec.train, (1:11)[-i], (1:11)[i])
-#   t.vec.pred = c(t.vec.train, rep(53,11))
-#   
-#   K.pre = matrix(0, (583),(583))
-#   K.pre = K_Calc.cpp(par.GPFull, x.vec.pred, t.vec.pred, K.pre)
-#   
-#   K.star = as.matrix(K.pre[,583][1:(582)])
-#   
-#   y.pred.vec = c(y.train.vec, y.train[1,][-i])
-#   f.star = t(K.star) %*% (K.GP.inv) %*% y.pred.vec
-#   H.star = Z.test[which(t.vec.test == 52)[i],]
-#   Z.pred = rbind(Z.train, Z.test[which(t.vec.test == 52)[-i],])
-#   
-#   R.pred = H.star - t(Z.pred) %*% K.GP.inv %*% K.star
-#   g.star[i] = f.star + t(R.pred) %*% B.GP
-# }
-# pdf('Plot_Predict.pdf', width = 12, height = 9)
-# plot(y.test[52,], typ = 'l', lwd = 3, ylim = c(-2.2, 0.6), main = 'Prediction', xlab = 'Month', ylab = 'Spread' )
-# points(y.test[52,])
-# lines(y.pred.full, col = 2)
-# points(y.pred.full, pch = 2, col = 2)
-# lines(y.pred.B, col = 3)
-# points(y.pred.B, pch = 3, col = 3)
-# lines(y.pred.gibbs, col = 4)
-# points(y.pred.gibbs, pch = 4, col = 4)
-# lines(y.pred.lasso, col = 5)
-# points(y.pred.lasso, pch = 5, col = 5)
-# lines(y.pred.BGP, col = 6)
-# points(y.pred.BGP, pch = 6, col = 6)
-# lines(g.star, col = 7)
-# points(g.star, pch = 7, col = 7)
-# legend(1, -1, c("Actual", "Full", "LS", "Gibbs", "Lasso", "LS-GP", "GP"), col = c(1,2,3,4,5,6,7), pch = c(1,2,3,4,5,6,7), lwd = c(3,0,0,0,0,0,0))
-# dev.off()
-# 
-# pdf('Plot_Predict_GPs.pdf', width = 12, height = 9)
-# plot(y.test[52,], typ = 'l', lwd = 3, ylim = c(-2.2, 0.6), main = 'Prediction - LS/GP vs GP', xlab = 'Month', ylab = 'Spread' )
-# points(y.test[52,])
-# lines(y.pred.BGP, col = 6)
-# points(y.pred.BGP, pch = 6, col = 6)
-# lines(g.star, col = 7)
-# points(g.star, pch = 7, col = 7)
-# legend(1, -1, c("Actual", "LS-GP", "GP"), col = c(1,6,7), pch = c(1,6,7), lwd = c(3,0,0))
-# dev.off()
-# 
-# prederror.full = sum((y.pred.full - y.test[52,])**2)
-# prederror.LS = sum((y.pred.B - y.test[52,])**2)
+y.pred.GP = z.pred %*% B.GP
+
+### Prediction linear plus GP
+y.forGP = y.train.vec - y.fromB
+K = matrix(0,nx.train*nt.train,nx.train*nt.train)
+K.GPFull = matrix(0, nrow(K), ncol(K))
+par.GPFull = c(10, 5, 1, 5)
+sig2 = 1
+sig2.diag = diag(1/sig2, nx.train*nt.train, nx.train*nt.train)
+par.opt = GPparam.opt(par.GPFull, y.forGP, nx.train, nt.train, x.vec.train, t.vec.train, sig2, K.GPFull)
+par.GPFull = par.opt
+
+K = matrix(0,nx.train*nt.train,nx.train*nt.train)
+K.GP = matrix(0, nrow(K), ncol(K))
+K.GP = K_Calc.cpp(par.GPFull, x.vec.train, t.vec.train, K.GP) + sig2.diag
+K.GP.inv = ginv(K.GP, 1e-20)
+B.GP = solve(t(Z.train) %*% K.GP.inv %*% Z.train) %*% t(Z.train) %*% K.GP.inv %*% y.forGP
+
+g.star.GPadd = rep(0,11)
+
+for(i in 1:11){
+  x.vec.pred = c(x.vec.train, (1:11)[-i])
+  t.vec.pred = c(t.vec.train, rep(53,10))
+  sig2 = 1
+  sig2.diag = diag(1/sig2, 582, 582)
+  K = matrix(0,582,582)
+  K.GP = matrix(0, nrow(K), ncol(K))
+  K.GP = K_Calc.cpp(par.GPFull, x.vec.pred, t.vec.pred, K.GP) + sig2.diag
+  K.GP.inv = ginv(K.GP, 1e-20)
+  
+  x.vec.pred = c(x.vec.train, (1:11)[-i], (1:11)[i])
+  t.vec.pred = c(t.vec.train, rep(53,11))
+  
+  K.pre = matrix(0, (583),(583))
+  K.pre = K_Calc.cpp(par.GPFull, x.vec.pred, t.vec.pred, K.pre)
+  
+  K.star = as.matrix(K.pre[,583][1:(582)])
+  
+  y.pred.vec = c(y.forGP, matrix(y.forGP, nt.train, nx.train)[1,][-i])
+  f.star = t(K.star) %*% (K.GP.inv) %*% y.pred.vec
+  H.star = Z.test[which(t.vec.test == 52)[i],]
+  Z.pred = rbind(Z.train, Z.test[which(t.vec.test == 52)[-i],])
+  
+  R.pred = H.star - t(Z.pred) %*% K.GP.inv %*% K.star
+  g.star.GPadd[i] = f.star + t(R.pred) %*% B.GP
+}
+
+y.pred.BGP = y.pred.B + g.star.GPadd
+points(y.pred.B + g.star.GPadd)
+
+### Prediction just GP
+K = matrix(0,nx.train*nt.train,nx.train*nt.train)
+K.GPFull = matrix(0, nrow(K), ncol(K))
+par.GPFull = c(10, 5, 1, 5)
+sig2 = 1
+sig2.diag = diag(1/sig2, nx.train*nt.train, nx.train*nt.train)
+par.opt = GPparam.opt(par.GPFull, y.train.vec, nx.train, nt.train, x.vec.train, t.vec.train, sig2, K.GPFull)
+par.GPFull = par.opt
+
+K = matrix(0,nx.train*nt.train,nx.train*nt.train)
+K.GP = matrix(0, nrow(K), ncol(K))
+K.GP = K_Calc.cpp(par.GPFull, x.vec.train, t.vec.train, K.GP) + sig2.diag
+K.GP.inv = ginv(K.GP, 1e-20)
+B.GP = solve(t(Z.train) %*% K.GP.inv %*% Z.train) %*% t(Z.train) %*% K.GP.inv %*% y.train.vec
+
+
+g.star = rep(0,11)
+for(i in 1:11){
+  x.vec.pred = c(x.vec.train, (1:11)[-i])
+  t.vec.pred = c(t.vec.train, rep(53,10))
+  sig2 = 1
+  sig2.diag = diag(1/sig2, 582, 582)
+  K = matrix(0,582,582)
+  K.GP = matrix(0, nrow(K), ncol(K))
+  K.GP = K_Calc.cpp(par.GPFull, x.vec.pred, t.vec.pred, K.GP) + sig2.diag
+  K.GP.inv = ginv(K.GP, 1e-20)
+  
+  x.vec.pred = c(x.vec.train, (1:11)[-i], (1:11)[i])
+  t.vec.pred = c(t.vec.train, rep(53,11))
+  
+  K.pre = matrix(0, (583),(583))
+  K.pre = K_Calc.cpp(par.GPFull, x.vec.pred, t.vec.pred, K.pre)
+  
+  K.star = as.matrix(K.pre[,583][1:(582)])
+  
+  y.pred.vec = c(y.train.vec, y.train[1,][-i])
+  f.star = t(K.star) %*% (K.GP.inv) %*% y.pred.vec
+  H.star = Z.test[which(t.vec.test == 52)[i],]
+  Z.pred = rbind(Z.train, Z.test[which(t.vec.test == 52)[-i],])
+  
+  R.pred = H.star - t(Z.pred) %*% K.GP.inv %*% K.star
+  g.star[i] = f.star + t(R.pred) %*% B.GP
+}
+
+plot(y.test[52,], typ = 'l', lwd = 3, ylim = c(-2.2, 0.6), main = 'Prediction', xlab = 'Month', ylab = 'Spread' )
+points(y.test[52,])
+lines(y.pred.full, col = 2)
+points(y.pred.full, pch = 2, col = 2)
+lines(y.pred.B, col = 3)
+points(y.pred.B, pch = 3, col = 3)
+lines(y.pred.BGP, col = 6)
+points(y.pred.BGP, pch = 6, col = 6)
+lines(g.star, col = 7)
+points(g.star, pch = 7, col = 7)
+legend(1, -1, c("Actual", "Full", "LS", "LS-GP", "GP"), col = c(1,2,3,4,5,6,7), pch = c(1,2,3,4,5,6,7), lwd = c(3,0,0,0,0,0,0))
+
+
+
+plot(y.test[52,], typ = 'l', lwd = 3, ylim = c(-2.2, 0.6), main = 'Prediction - LS/GP vs GP', xlab = 'Month', ylab = 'Spread' )
+points(y.test[52,])
+lines(y.pred.BGP, col = 6)
+points(y.pred.BGP, pch = 6, col = 6)
+lines(g.star, col = 7)
+points(g.star, pch = 7, col = 7)
+legend(1, -1, c("Actual", "LS-GP", "GP"), col = c(1,6,7), pch = c(1,6,7), lwd = c(3,0,0))
+
+
+prederror.full = sum((y.pred.full - y.test[52,])**2)
+prederror.LS = sum((y.pred.B - y.test[52,])**2)
 # prederror.gibbs = sum((y.pred.gibbs - y.test[52,])**2)
 # prederror.lasso = sum((y.pred.lasso - y.test[52,])**2)
-# prederror.BGP = sum((y.pred.BGP - y.test[52,])**2)
-# prederror.GP= sum((g.star - y.test[52,])**2)
-# 
-# prederror = c(prederror.full,prederror.LS, prederror.gibbs, prederror.lasso, prederror.BGP, prederror.GP)
-# pdf('Plot_PredictError.pdf', width = 12, height = 9)
-# par(mfrow = c(1,1))
-# lab = c('Full', 'LS', 'Gibbs', 'Lasso', 'LS - GP', 'GP')
-# barplot(prederror, axisnames = TRUE, names.arg = lab, main = 'Prediction Error')
-# dev.off()
-# 
-# # Diagnostics
-# start.time = proc.time()
-# Rprof("profile1.out")
-# Rprof(NULL)
-# end.time = proc.time()
-# total.time = end.time - start.time
-# total.time
-# summaryRprof("profile1.out")
+prederror.BGP = sum((y.pred.BGP - y.test[52,])**2)
+prederror.GP= sum((g.star - y.test[52,])**2)
+
+prederror = c(prederror.full,prederror.LS, prederror.BGP, prederror.GP)
+
+par(mfrow = c(1,1))
+lab = c('Full', 'LS', 'LS - GP', 'GP')
+barplot(prederror, axisnames = TRUE, names.arg = lab, main = 'Prediction Error')
+
 
 
 
