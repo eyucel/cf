@@ -1,3 +1,14 @@
 .Rproj.user
 .Rhistory
 .RData
+Plot_BackCoeffs_Gibbs.pdf
+Plot_BackCoeffs_LS_Lasso.pdf
+Plot_Coeffs_GP_Full.pdf
+Plot_ContCoeffs_Gibbs.pdf
+Plot_ContCoeffs_LS_Lasso.pdf
+Plot_Data.pdf
+Plot_GP_Full_BackMonth.pdf
+Plot_ModelError.pdf
+Plot_Predict.pdf
+Plot_PredictError.pdf
+Plot_Predict_GPs.pdf
