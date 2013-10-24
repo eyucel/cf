@@ -137,8 +137,8 @@ for (int t = 1; t < n; t++){
     pred[t] = pp*post[t-1] + (1-pp)*(1-post[t-1]);
     m = GG*lambdacpp[t-1];
     sd = sqrt(WW);
-    likelihood_S0 = R::dnorm(lambdacpp[t],gammacpp[0]+m,sd,0);
-    likelihood_S1 = R::dnorm(lambdacpp[t],gammacpp[1]+m,sd,0);
+    likelihood_S0 = R::dnorm(ycpp[t],0,sqrt(exp(gammacpp[0]+m)),0);
+    likelihood_S1 = R::dnorm(ycpp[t],0,sqrt(exp(gammacpp[1]+m)),0);
     post[t] = likelihood_S0 * pred[t] /(likelihood_S0*pred[t]+likelihood_S1*(1-pred[t]));
     //Rcpp::Rcout << likelihood_S0 << " " << likelihood_S1 << " " <<post[t] << std::endl;
   }
@@ -295,8 +295,8 @@ error     = rnorm(n,0.0,sqrt(W))
 S = rep(0,n)
 S[1] = rbinom(1,1,.5)
 S[1] = 0
-p0 = .65
-q0 = .65
+p0 = .3
+q0 = .25
 lambda[1] = gamma[S[1]+1]+G*lambda0+error[1]
 for (t in 2:n){
   if (S[t-1] == 0)
@@ -306,7 +306,7 @@ for (t in 2:n){
 
   lambda[t] = gamma[S[t]+1]+G*lambda[t-1]+error[t]
 }
-print(S)
+#print(S)
 h = exp(lambda/2)
 y = rnorm(n,0,h)
 # plot(y,type="l")
@@ -323,8 +323,8 @@ R1        = 1000
 
 lambdas   = lambda
 pars      = c(gamma,G,sqrt(W),p0,q0)
-M0        = 1000
-M         = 1000
+M0        = 2000
+M         = 2000
 
 # Initial values
 p = rbeta(1,1,1)
