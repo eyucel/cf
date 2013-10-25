@@ -562,65 +562,65 @@ MSE.GPOnly
 # ### Next Step is in contango
 # 
 # ### Predict Bayes
-# 
-# y.pred = y.test[52,]
-# z.pred = Z.test[which(t.vec.test == 52),]
-# 
-# 
-# # Full
-# y.pred.full = z.pred %*% B.full
-# y.pred.B = z.pred %*% B.cont
+
+y.pred = y.test[52,]
+z.pred = Z.test[which(t.vec.test == 52),]
+
+
+# Full
+y.pred.full = z.pred %*% B.full
+y.pred.B = z.pred %*% B.cont
 # y.pred.gibbs = z.pred %*% B.cont.gibbs
 # y.pred.lasso = z.pred %*% B.cont.lasso
-# y.pred.GP = z.pred %*% B.GP
+y.pred.GP = z.pred %*% B.GP
 # 
 # ### Prediction linear plus GP
-# y.forGP = y.train.vec - y.fromB
-# K = matrix(0,nx.train*nt.train,nx.train*nt.train)
-# K.GPFull = matrix(0, nrow(K), ncol(K))
-# par.GPFull = c(10, 5, 1, 5)
-# sig2 = 1
-# sig2.diag = diag(1/sig2, nx.train*nt.train, nx.train*nt.train)
-# par.opt = GPparam.opt(par.GPFull, y.forGP, nx.train, nt.train, x.vec.train, t.vec.train, sig2, K.GPFull)
-# par.GPFull = par.opt
-# 
-# K = matrix(0,nx.train*nt.train,nx.train*nt.train)
-# K.GP = matrix(0, nrow(K), ncol(K))
-# K.GP = K_Calc.cpp(par.GPFull, x.vec.train, t.vec.train, K.GP) + sig2.diag
-# K.GP.inv = ginv(K.GP, 1e-20)
-# B.GP = solve(t(Z.train) %*% K.GP.inv %*% Z.train) %*% t(Z.train) %*% K.GP.inv %*% y.forGP
-# 
-# g.star.GPadd = rep(0,11)
-# 
-# for(i in 1:11){
-#   x.vec.pred = c(x.vec.train, (1:11)[-i])
-#   t.vec.pred = c(t.vec.train, rep(53,10))
-#   sig2 = 1
-#   sig2.diag = diag(1/sig2, 582, 582)
-#   K = matrix(0,582,582)
-#   K.GP = matrix(0, nrow(K), ncol(K))
-#   K.GP = K_Calc.cpp(par.GPFull, x.vec.pred, t.vec.pred, K.GP) + sig2.diag
-#   K.GP.inv = ginv(K.GP, 1e-20)
-#   
-#   x.vec.pred = c(x.vec.train, (1:11)[-i], (1:11)[i])
-#   t.vec.pred = c(t.vec.train, rep(53,11))
-#   
-#   K.pre = matrix(0, (583),(583))
-#   K.pre = K_Calc.cpp(par.GPFull, x.vec.pred, t.vec.pred, K.pre)
-#   
-#   K.star = as.matrix(K.pre[,583][1:(582)])
-#   
-#   y.pred.vec = c(y.forGP, matrix(y.forGP, nt.train, nx.train)[1,][-i])
-#   f.star = t(K.star) %*% (K.GP.inv) %*% y.pred.vec
-#   H.star = Z.test[which(t.vec.test == 52)[i],]
-#   Z.pred = rbind(Z.train, Z.test[which(t.vec.test == 52)[-i],])
-#   
-#   R.pred = H.star - t(Z.pred) %*% K.GP.inv %*% K.star
-#   g.star.GPadd[i] = f.star + t(R.pred) %*% B.GP
-# }
-# 
-# y.pred.BGP = y.pred.B + g.star.GPadd
-# points(y.pred.B + g.star.GPadd)
+y.forGP = y.train.vec - y.fromB
+K = matrix(0,nx.train*nt.train,nx.train*nt.train)
+K.GPFull = matrix(0, nrow(K), ncol(K))
+par.GPFull = c(10, 5, 1, 5)
+sig2 = 1
+sig2.diag = diag(1/sig2, nx.train*nt.train, nx.train*nt.train)
+par.opt = GPparam.opt(par.GPFull, y.forGP, nx.train, nt.train, x.vec.train, t.vec.train, sig2, K.GPFull)
+par.GPFull = par.opt
+
+K = matrix(0,nx.train*nt.train,nx.train*nt.train)
+K.GP = matrix(0, nrow(K), ncol(K))
+K.GP = K_Calc.cpp(par.GPFull, x.vec.train, t.vec.train, K.GP) + sig2.diag
+K.GP.inv = ginv(K.GP, 1e-20)
+B.GP = solve(t(Z.train) %*% K.GP.inv %*% Z.train) %*% t(Z.train) %*% K.GP.inv %*% y.forGP
+
+g.star.GPadd = rep(0,11)
+
+for(i in 1:11){
+  x.vec.pred = c(x.vec.train, (1:11)[-i])
+  t.vec.pred = c(t.vec.train, rep(53,10))
+  sig2 = 1
+  sig2.diag = diag(1/sig2, 582, 582)
+  K = matrix(0,582,582)
+  K.GP = matrix(0, nrow(K), ncol(K))
+  K.GP = K_Calc.cpp(par.GPFull, x.vec.pred, t.vec.pred, K.GP) + sig2.diag
+  K.GP.inv = ginv(K.GP, 1e-20)
+  
+  x.vec.pred = c(x.vec.train, (1:11)[-i], (1:11)[i])
+  t.vec.pred = c(t.vec.train, rep(53,11))
+  
+  K.pre = matrix(0, (583),(583))
+  K.pre = K_Calc.cpp(par.GPFull, x.vec.pred, t.vec.pred, K.pre)
+  
+  K.star = as.matrix(K.pre[,583][1:(582)])
+  
+  y.pred.vec = c(y.forGP, matrix(y.forGP, nt.train, nx.train)[1,][-i])
+  f.star = t(K.star) %*% (K.GP.inv) %*% y.pred.vec
+  H.star = Z.test[which(t.vec.test == 52)[i],]
+  Z.pred = rbind(Z.train, Z.test[which(t.vec.test == 52)[-i],])
+  
+  R.pred = H.star - t(Z.pred) %*% K.GP.inv %*% K.star
+  g.star.GPadd[i] = f.star + t(R.pred) %*% B.GP
+}
+
+y.pred.BGP = y.pred.B + g.star.GPadd
+points(y.pred.B + g.star.GPadd)
 # 
 # ### Prediction just GP
 # K = matrix(0,nx.train*nt.train,nx.train*nt.train)
