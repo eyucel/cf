@@ -12,3 +12,8 @@ Plot_ModelError.pdf
 Plot_Predict.pdf
 Plot_PredictError.pdf
 Plot_Predict_GPs.pdf
+boxplot-50.pdf
+comparison-50.pdf
+profile1.out
+sv-par.pdf
+sv-vars.pdf
