@@ -9,6 +9,13 @@ PL = function(y,alphas,betas,tau2s,xs){
   
   s      = matrix(0,N,7)
   
+  mu.alpha = rep(b0[1],N)
+  mu.beta = rep(b0[2],N)
+  tau.alpha = rep(1/B0[1],N)
+  tau.beta = rep(1/B0[2],N)
+  c.tau = rep(c0,N)
+  d.tau = rep(d0,N)
+  
   
   s[,1] = 1/B0[1]
   s[,2] = 0
@@ -20,7 +27,7 @@ PL = function(y,alphas,betas,tau2s,xs){
   m      = s[,1]*s[,3]-s[,2]^2
   b1   = (s[,3]*s[,4]-s[,2]*s[,5])/m
   b2   = (s[,1]*s[,5]-s[,2]*s[,4])/m
-  
+
   
   for (t in 1:n){
     # Resampling
@@ -42,7 +49,11 @@ PL = function(y,alphas,betas,tau2s,xs){
     xs     = rnorm(N,means,sds)
     so     = s[k,]
     b1o  = b1[k]
-    b2o  = b2[k]    
+    b2o  = b2[k] 
+    mu.alphao = mu.alpha[k]
+    mu.betao = mu.beta[k]
+    c.tau = c.tau[k]
+    d.tau = d.tau[k]
     # Updating sufficient stats
     s[,1]  = so[,1] + 1
     s[,2]  = so[,2] + xs1
@@ -50,7 +61,12 @@ PL = function(y,alphas,betas,tau2s,xs){
     s[,4]  = so[,4] + xs
     s[,5]  = so[,5] + xs*xs1
     s[,6]  = so[,6] + 1
-
+    
+    c.tau = c.tau + 1
+    mu.alpha = mu.alphao + (xs-xs1*mu.betao)
+    mu.beta = mu.betao + (xs-mu.alphao)/xs1
+    d.tau = d.tau + (xs-(mu.alpha/(1+t)+mu.beta/(1+t)*xs1))^2
+    print(((xs-(mu.alpha/(1+t)+mu.beta/(1+t)*xs1))^2)[1])
     # determinant of Binv matrix
     m      = s[,1]*s[,3]-s[,2]^2 
     
@@ -58,15 +74,35 @@ PL = function(y,alphas,betas,tau2s,xs){
     b1   = (s[,3]*s[,4]-s[,2]*s[,5])/m  
     b2   = (s[,1]*s[,5]-s[,2]*s[,4])/m
     
+#     print(b1[1])
+# 
+#     print(mu.alpha[1]/(1+t))
+#     print(b2[1])
+#     print(mu.beta[1]/(1+t))
+
+    #     
+    
     s[,7]  = so[,7] + (xs-b1-b2*xs1)*xs + (b1o-b1)*so[,4]+(b2o-b2)*so[,5]
     
+    print(s[1,6])
+    print(c.tau[1])
+    print(s[1,7])
+    print(d.tau[1])
+    scan(n=1)
+    
     tau2s  = 1/rgamma(N,s[,6]/2,s[,7]/2)
+    tau2s = 1/rgamma(N,c.tau/2,d.tau/2)
     std    = sqrt(tau2s/m)
     norm   = cbind(rnorm(N,0,std),rnorm(N,0,std))
     
     # cholesky decomposition of B, thus inv(Binv)
     alphas = b1 + sqrt(s[,3])*norm[,1]
+
+
+    alphas = rnorm(N,mu.alpha/(1+t),sqrt(tau2s/(1+t)))
+    
     betas  = b2 - s[,2]/sqrt(s[,3])*norm[,1]+sqrt(s[,1]-s[,2]^2/s[,3])*norm[,2]  
+    betas = rnorm(N,mu.beta/(1+t),sqrt(tau2s/(1+t)))
     # Storing quantiles
     quants[t,1,] = quantile(alphas,c(0.025,0.5,0.975))
     quants[t,2,] = quantile(betas,c(0.025,0.5,0.975))
