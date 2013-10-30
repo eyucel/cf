@@ -15,8 +15,7 @@ PL = function(y,alphas,betas,tau2s,xs){
   tau.beta = rep(1/B0[2],N)
   c.tau = rep(c0,N)
   d.tau = rep(d0,N)
-  
-  
+
   s[,1] = 1/B0[1]
   s[,2] = 0
   s[,3] = 1/B0[2]
@@ -66,7 +65,7 @@ PL = function(y,alphas,betas,tau2s,xs){
     mu.alpha = mu.alphao + (xs-xs1*mu.betao)
     mu.beta = mu.betao + (xs-mu.alphao)/xs1
     d.tau = d.tau + (xs-(mu.alpha/(1+t)+mu.beta/(1+t)*xs1))^2
-    print(((xs-(mu.alpha/(1+t)+mu.beta/(1+t)*xs1))^2)[1])
+    
     # determinant of Binv matrix
     m      = s[,1]*s[,3]-s[,2]^2 
     
@@ -80,8 +79,24 @@ PL = function(y,alphas,betas,tau2s,xs){
 #     print(b2[1])
 #     print(mu.beta[1]/(1+t))
 
-    #     
+    #    
+    Q = 1
+    C0 = diag(B0,2)
+    F1 = rbind(1,xs1[1])
     
+    D1 = t(F1)  %*% C0 %*% F1+Q
+    D1 = 1 + B0
+#     print(C0 %*%F1  %*% solve(D1) )
+    
+    m1 = b0[1] + mus[1] - betas[1]*xs1[1] + B0/D1 * (xs[1]-b0[1]-b0[2]*xs1[1])
+#     m1 = rbind(b0[1],b0[2]) + C0 %*%F1  %*% solve(D1) %*% (xs[1]-t(F1)%*%rbind(b0[1],b0[2]))
+#     print(xs[1]-b0[1]-b0[2]*xs1[1])
+#     print((xs[1]-t(F1)%*%rbind(b0[1],b0[2])))
+#     C1 = C0 - C0 %*% F1 %*% solve(D1)  %*% t(F1) %*% C0
+    print(m1[1])
+    print(b1[1])
+    print(m1[2])
+    print(b2[1])
     s[,7]  = so[,7] + (xs-b1-b2*xs1)*xs + (b1o-b1)*so[,4]+(b2o-b2)*so[,5]
     
     print(s[1,6])
