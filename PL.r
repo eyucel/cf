@@ -9,7 +9,6 @@ PL = function(y,alphas,betas,tau2s,xs){
   
   s      = matrix(0,N,7)
   
-
   
   s[,1] = 1/B0[1]
   s[,2] = 0
@@ -64,6 +63,8 @@ PL = function(y,alphas,betas,tau2s,xs){
     tau2s  = 1/rgamma(N,s[,6]/2,s[,7]/2)
     std    = sqrt(tau2s/m)
     norm   = cbind(rnorm(N,0,std),rnorm(N,0,std))
+    
+    # cholesky decomposition of B, thus inv(Binv)
     alphas = b1 + sqrt(s[,3])*norm[,1]
     betas  = b2 - s[,2]/sqrt(s[,3])*norm[,1]+sqrt(s[,1]-s[,2]^2/s[,3])*norm[,2]  
     # Storing quantiles
