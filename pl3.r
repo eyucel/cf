@@ -7,7 +7,7 @@ PL = function(y,alphas,betas,tau2s,xs,zs){
   
   
   
-  s      = matrix(0,N,11)
+  s  = matrix(0,N,11)
   # matrix Binv looks like
   # | s1   s2    s3 |
   # | s2   s4    s5 |
@@ -28,25 +28,26 @@ PL = function(y,alphas,betas,tau2s,xs,zs){
   
   blk.A = s[,4]*s[,6] - s[,5]^2
   blk.B = -(s[,2]*s[,6]-s[,3]*s[,5])
-  blk.C = s[,2]*s[,5]*s[,3]*s[,5]
+  blk.C = s[,2]*s[,5]-s[,3]*s[,5]
 #   blk.D = blk.B
-  blk.E = s[,1]*s[,6]*s[,3]^2
+  blk.E = s[,1]*s[,6]-s[,3]^2
   blk.F = -(s[,3]*s[,5]-s[,2]*s[,3])
 #   blk.G = blk.C
 #   blk.H = blk.F
   blk.I  = s[,1]*s[,4]-s[,2]^2
-  
+
   m    = s[,1]*blk.A + s[,2] * blk.B + s[,3] * blk.C
   b1   = (s[,7]*blk.A + s[,8] * blk.B + s[,9] * blk.C)/m
   b2   = (s[,7]*blk.B + s[,8] * blk.E + s[,9] * blk.F)/m
   b3   = (s[,7]*blk.C + s[,8] * blk.F + s[,9] * blk.I)/m
   
-  
+
   for (t in 1:n){
     # Resampling
     mus    = alphas+gammas*zs+betas*xs
     stdevs = exp(mus/2)
     weight = dnorm(y[t],0,stdevs)
+    
     k      = sample(1:N,size=N,replace=T,prob=weight)
     alphas = alphas[k]
     betas  = betas[k]
@@ -73,33 +74,74 @@ PL = function(y,alphas,betas,tau2s,xs,zs){
     s[,5]  = so[,5] + zs1*xs1
     s[,6]  = so[,6] + xs1^2
     s[,7]  = so[,7] + xs
-    s[,8]  = so[,8] + zs1*xs
+    s[,8]  = so[,8] + xs*zs1
     s[,9]  = so[,9] + xs*xs1
     s[,10]  = so[,10] + 1
     
     blk.A = s[,4]*s[,6] - s[,5]^2
     blk.B = -(s[,2]*s[,6]-s[,3]*s[,5])
-    blk.C = s[,2]*s[,5]*s[,3]*s[,5]
+    blk.C = s[,2]*s[,5]-s[,3]*s[,4]
     #   blk.D = blk.B
-    blk.E = s[,1]*s[,6]*s[,3]^2
+    blk.E = s[,1]*s[,6]-s[,3]^2
     blk.F = -(s[,3]*s[,5]-s[,2]*s[,3])
     #   blk.G = blk.C
     #   blk.H = blk.F
     blk.I  = s[,1]*s[,4]-s[,2]^2
     
+
+    
+    
     
     
     # determinant of Binv matrix
     m    = s[,1]*blk.A + s[,2] * blk.B + s[,3] * blk.C
-    
+#     AA = matrix(c(s[1,1],s[1,2],s[1,3],s[1,2],s[1,4],s[1,5],s[1,3],s[1,5],s[1,6]),3,3)
+#     print(det(AA))
+#     print(m[1])
+#     print(AA)
+#      print(c(blk.A[1]/m[1],blk.B[1]/m[1],blk.C[1]/m[1]))
+#      print(solve(AA))
     # b_{t} =  inv(Binv_{t}) x (Binv_{t-1} * b_{t-1})     
     b1   = (s[,7]*blk.A + s[,8] * blk.B + s[,9] * blk.C)/m
     b2   = (s[,7]*blk.B + s[,8] * blk.E + s[,9] * blk.F)/m
     b3   = (s[,7]*blk.C + s[,8] * blk.F + s[,9] * blk.I)/m
+#     
     
-    print(xs)
+    F.new = rbind(1,zs1[3],xs1[3])
+    C.old = diag(B0,3)
+    Q = 1
+    D1 = t(F.new) %*% C.old%*% F.new + Q 
+      
+      
+      #       C0 = diag(B0,2)
+      #       print( C0 %*%F.new[,j]  %*% solve(D1) %*% (xs[1]-t(F.new[,j])%*%b0))
+      CF = C.old %*% F.new
+      
+      D.new = t(F.new)  %*% CF +Q
+      D.inv = solve(D.new)
+#       print(D.inv)
+    
+      m.old = b0
+#       print(D.new)
+#       print(CF %*% D.inv %*% (xs[j]-t(F.new[,j]) %*% m.old[j,]))
+#       m.old = m.old + CF %*% D.inv %*% (xs[1]-t(F.new) %*% m.old)
+    print(D.inv %*% (xs[1]-t(F.new) %*% m.old))
+      C.old = C.old - CF %*% D.inv  %*% t(F.new) %*% C.old
+      d0 = d0 + t(xs[3]-t(F.new)%*% m.old)%*% D.inv %*% (xs[3]-t(F.new) %*% m.old)
+    m.old = m.old + CF %*% D.inv %*% (xs[1]-t(F.new) %*% m.old)
+
+#     print(F.new)
+#     print(m.old)
+#     print(c(b1o[3],b2o[3],b3o[3]))
+#     print(c(zs1[3],xs1[3]))
+#     print(((xs-b1-b2*zs1-b3*xs1)*xs+(b1o-b1)*so[,7]+(b2o-b2)*so[,8]+(b3o-b3)*so[,9])[3])
+#       print(m.old)
+#     print(c(b1[1],b2[1],b3[1]))
+#     scan(n=1)
+#     
+    #print(xs)
     s[,11]  = so[,11] + (xs-b1-b2*zs1-b3*xs1)*xs + (b1o-b1)*so[,7]+(b2o-b2)*so[,8]+(b3o-b3)*so[,9]
-    
+#     print(s[,11])
     tau2s  = 1/rgamma(N,s[,10]/2,s[,11]/2)
     std    = sqrt(tau2s/m)
     
@@ -130,9 +172,9 @@ PL = function(y,alphas,betas,tau2s,xs,zs){
 # Simulated data
 set.seed(98765)
 n     =  1000
-alpha =  -2
-gamma = 3
-beta  =  0.99
+alpha =  -.5
+gamma = .6
+beta  =  0.65
 tau2  =  0.15^2
 sig2  =  1.0
 tau   = sqrt(tau2)
@@ -144,12 +186,13 @@ names = c("alpha","gamma","beta","tau2")
 p0 = .98
 q0 = .97
 for (t in 2:(n+1))
+  {
   if (S[t-1] == 0)
     S[t] = rbinom(1,1,1-p0)
   if (S[t-1] == 1)
     S[t] = rbinom(1,1,q0)
 
-  x[t] = alpha+gamma*S[t]+beta*x[t-1]+tau*rnorm(1)
+  x[t] = alpha+gamma*S[t]+beta*x[t-1]+tau*rnorm(1)}
 x = x[2:(n+1)]
 y = rnorm(n,0,exp(x/2))
 
@@ -174,7 +217,7 @@ sB0   = sqrt(B0)
 # ONE LONG PL FILTER
 # ------------------
 set.seed(246521)
-N      = 100
+N      = 1000
 xs     = rnorm(N,m0,sC0)
 zs = S[2:(n+1)]
 tau2s  = 1/rgamma(N,c0/2,d0/2)
