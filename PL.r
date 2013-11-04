@@ -60,6 +60,34 @@ PL = function(y,alphas,betas,tau2s,xs){
     
     s[,7]  = so[,7] + (xs-b1-b2*xs1)*xs + (b1o-b1)*so[,4]+(b2o-b2)*so[,5]
     
+    F.new = rbind(1,xs1[2])
+    C.old = diag(B0,2)
+    Q = 1
+    D1 = t(F.new) %*% C.old%*% F.new + Q 
+    
+    
+    #       C0 = diag(B0,2)
+    #       print( C0 %*%F.new[,j]  %*% solve(D1) %*% (xs[1]-t(F.new[,j])%*%b0))
+    CF = C.old %*% F.new
+    
+    D.new = t(F.new)  %*% CF +Q
+    D.inv = solve(D.new)
+    #       print(D.inv)
+    
+    m.old = b0
+    #       print(D.new)
+    #       print(CF %*% D.inv %*% (xs[j]-t(F.new[,j]) %*% m.old[j,]))
+    #       m.old = m.old + CF %*% D.inv %*% (xs[1]-t(F.new) %*% m.old)
+    print(D.inv %*% (xs[1]-t(F.new) %*% m.old))
+    C.old = C.old - CF %*% D.inv  %*% t(F.new) %*% C.old
+    d0 = d0 + t(xs[2]-t(F.new)%*% m.old)%*% D.inv %*% (xs[2]-t(F.new) %*% m.old)
+    m.old = m.old + CF %*% D.inv %*% (xs[2]-t(F.new) %*% m.old)
+
+    print(d0)
+    print(s[2,7])
+    scan(n=1)
+    
+    
     tau2s  = 1/rgamma(N,s[,6]/2,s[,7]/2)
     std    = sqrt(tau2s/m)
     norm   = cbind(rnorm(N,0,std),rnorm(N,0,std))
