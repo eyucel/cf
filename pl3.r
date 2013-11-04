@@ -208,10 +208,13 @@ PL = function(y,alphas,betas,tau2s,ps,qs,xs,zs){
     
     alphas = b1 + L11*norm[,1]
     gammas = b2 + L21*norm[,1]+L22*norm[,2]
-    gamma.mean = b2[b2>0]
-    gammas = rtnorm(N,gamma.mean,sd = sqrt(blk.E)*std,lower=0)
+#     gamma.mean = b2[b2>0]
+    
 #     gammas = rtnorm(N,mean=b2,lower=0)
     betas  = b3 + L31*norm[,1] + L32 * norm[,2] + L33 * norm[,3]
+    
+    gamma.mean = b2 - s[,4]*(s[,2]*(b1-alphas)+s[,5]*(b3-betas))
+    gammas = rtnorm(N,gamma.mean,sd = sqrt(tau2s/s[,4]),lower=0)
     
     ps = rbeta(N,s[,12]+1,s[,13]+1)
     qs = rbeta(N,s[,15]+1,s[,14]+1)
@@ -232,14 +235,14 @@ PL = function(y,alphas,betas,tau2s,ps,qs,xs,zs){
 # Simulated data
 # set.seed(98765)
 n     =  1000
-alpha =  -1
-gamma = 2
+alpha =  -2.5
+gamma = -1
 beta  =  0.5
-tau2  =  0.15^2
+tau2  =  1^2
 sig2  =  1.0
 tau   = sqrt(tau2)
-p0 = .9
-q0 = .6
+p0 = .99
+q0 = .985
 
 x     = rep(alpha/(1-beta),n+1)
 S = rep(0,n+1)
@@ -279,13 +282,13 @@ sB0   = sqrt(B0)
 # ONE LONG PL FILTER
 # ------------------
 # set.seed(246521)
-N      = 1000
+N      = 10000
 xs     = rnorm(N,m0,sC0)
 zs = rbinom(N,1,.5)
 tau2s  = 1/rgamma(N,c0/2,d0/2)
 taus   = sqrt(tau2s)
 alphas = rnorm(N,b0[1],taus*sB0[1])
-gammas = rnorm(N,b0[2],taus*sB0[2])
+gammas = rtnorm(N,b0[2],taus*sB0[2],lower=0)
 betas  = rnorm(N,b0[3],taus*sB0[3])
 ps  = rbeta(N,1,1)
 qs = rbeta(N,1,1)
