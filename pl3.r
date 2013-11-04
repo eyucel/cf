@@ -1,4 +1,4 @@
-
+library(msm)
 PL = function(y,alphas,betas,tau2s,ps,qs,xs,zs){
   n      = length(y)
   N      = length(xs)
@@ -208,9 +208,11 @@ PL = function(y,alphas,betas,tau2s,ps,qs,xs,zs){
     
     alphas = b1 + L11*norm[,1]
     gammas = b2 + L21*norm[,1]+L22*norm[,2]
-     gammas[gammas<0] = .01
+    gamma.mean = b2[b2>0]
+    gammas = rtnorm(N,gamma.mean,sd = sqrt(blk.E)*std,lower=0)
 #     gammas = rtnorm(N,mean=b2,lower=0)
     betas  = b3 + L31*norm[,1] + L32 * norm[,2] + L33 * norm[,3]
+    
     ps = rbeta(N,s[,12]+1,s[,13]+1)
     qs = rbeta(N,s[,15]+1,s[,14]+1)
     # Storing quantiles
@@ -277,7 +279,7 @@ sB0   = sqrt(B0)
 # ONE LONG PL FILTER
 # ------------------
 # set.seed(246521)
-N      = 10000
+N      = 1000
 xs     = rnorm(N,m0,sC0)
 zs = rbinom(N,1,.5)
 tau2s  = 1/rgamma(N,c0/2,d0/2)
