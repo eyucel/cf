@@ -153,7 +153,7 @@ PL = function(y,alphas,betas,tau2s,ps,qs,xs,zs){
 #     F.new = rbind(1,zs1[ti],xs1[ti])
 #     C.old = diag(B0,3)
 #     Q = 1
-#     print(zs1[ti])
+# #     print(zs1[ti])
 #     D1 = t(F.new) %*% C.old%*% F.new + Q 
 #       
 #       
@@ -174,6 +174,7 @@ PL = function(y,alphas,betas,tau2s,ps,qs,xs,zs){
 #       C.old = C.old - CF %*% D.inv  %*% t(F.new) %*% C.old
 #       d0 = d0 + t(xs[ti]-t(F.new)%*% m.old)%*% D.inv %*% (xs[ti]-t(F.new) %*% m.old)
 #     m.old = m.old + CF %*% D.inv %*% (xs[ti]-t(F.new) %*% m.old)
+#     print(d0)
 #     print(C.old)
 #     print(chol(C.old))
 #     print(m.old)
@@ -189,7 +190,7 @@ PL = function(y,alphas,betas,tau2s,ps,qs,xs,zs){
 #     
     #print(xs)
     s[,11]  = so[,11] + (xs-b1-b2*zs1-b3*xs1)*xs + (b1o-b1)*so[,7]+(b2o-b2)*so[,8]+(b3o-b3)*so[,9]
-#     print(s[,11])
+#     print(s[ti,11])
     tau2s  = 1/rgamma(N,s[,10]/2,s[,11]/2)
     std    = sqrt(tau2s/m)
     
@@ -240,9 +241,9 @@ PL = function(y,alphas,betas,tau2s,ps,qs,xs,zs){
 # Simulated data
 set.seed(98765)
 n     =  1000
-alpha =  -2.5
+alpha =  -1
 gamma = 1.5
-beta  =  0.5
+beta  =  0.7
 tau2  =  .5
 sig2  =  1.0
 tau   = sqrt(tau2)
