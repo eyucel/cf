@@ -6,7 +6,7 @@ PL = function(y,alphas,betas,tau2s,ps,qs,xs,zs){
   
   
   
-  
+#   zz = matrix(zs,n,N)
   s  = matrix(0,N,15)
   # matrix Binv looks like
   # | s1   s2    s3 |
@@ -46,10 +46,12 @@ PL = function(y,alphas,betas,tau2s,ps,qs,xs,zs){
   
 
   for (t in 1:n){
+#     zs = zz[t,]
     # Resampling
     mus    = alphas+gammas*zs+betas*xs
     stdevs = exp(mus/2)
-    weight = dnorm(y[t],0,stdevs)
+    stdevs1 = exp((alphas+betas*xs)/2)
+    weight = dnorm(y[t],0,stdevs)*(qs+(1-zs)*(1-qs)) + dnorm(y[t],0,stdevs1)*((1-zs)*ps+zs*(1-ps))
 #     print(weight)
     k      = sample(1:N,size=N,replace=T,prob=weight)
     alphas = alphas[k]
@@ -66,12 +68,15 @@ PL = function(y,alphas,betas,tau2s,ps,qs,xs,zs){
     vars   = 1/(1/sig2s+1/tau2s)
     sds    = sqrt(vars)
     means  = mus + vars*(y[t]/sig2s)
-    xs     = rnorm(N,means,sds)
     zero.index = zs1 == 0
     one.index = zs1 == 1
     ll = sum(zero.index)
+    #     zs = zz[t+1,]
     zs[zero.index]     = rbinom(ll,1,1-ps[zero.index])
     zs[one.index]      = rbinom(N-ll,1,qs[one.index])
+    mus    = alphas+gammas*zs+betas*xs1
+    xs     = rnorm(N,means,sds)
+
 #     print(zs)
 #     print(qs)
 #     print(ps)
@@ -213,8 +218,8 @@ PL = function(y,alphas,betas,tau2s,ps,qs,xs,zs){
 #     gammas = rtnorm(N,mean=b2,lower=0)
     betas  = b3 + L31*norm[,1] + L32 * norm[,2] + L33 * norm[,3]
     
-    gamma.mean = b2 - s[,4]*(s[,2]*(b1-alphas)+s[,5]*(b3-betas))
-    gammas = rtnorm(N,gamma.mean,sd = sqrt(tau2s/s[,4]),lower=0)
+#     gamma.mean = b2 - 1/s[,4]*(s[,2]*(alphas-b1)+s[,5]*(betas-b3))
+#     gammas = rnorm(N,gamma.mean,sd = sqrt(tau2s/s[,4]))
     
     ps = rbeta(N,s[,12]+1,s[,13]+1)
     qs = rbeta(N,s[,15]+1,s[,14]+1)
@@ -233,12 +238,12 @@ PL = function(y,alphas,betas,tau2s,ps,qs,xs,zs){
 }
 
 # Simulated data
-# set.seed(98765)
+set.seed(98765)
 n     =  1000
 alpha =  -2.5
-gamma = -1
+gamma = 1.5
 beta  =  0.5
-tau2  =  1^2
+tau2  =  .5
 sig2  =  1.0
 tau   = sqrt(tau2)
 p0 = .99
@@ -281,7 +286,7 @@ sB0   = sqrt(B0)
 
 # ONE LONG PL FILTER
 # ------------------
-# set.seed(246521)
+set.seed(246521)
 N      = 10000
 xs     = rnorm(N,m0,sC0)
 zs = rbinom(N,1,.5)
@@ -309,9 +314,9 @@ for (i in 1:6){
   ts.plot(plm[,i,],xlab="",ylab="",main=names[i],col=cols,ylim=range(plm[ind,i,]))
   abline(h=true[i],lty=2)
 }
-par(mfrow=c(1,1))
-ts.plot(plm[,7,2],xlab="",ylab="",main="states",col=1,ylim=c(-1,2),lwd=2)
-points(S[2:(n+1)],col='red',ylim=c(-1,2),lwd=1)
+# par(mfrow=c(1,1))
+# ts.plot(plm[,7,2],xlab="",ylab="",main="states",col=1,ylim=c(-1,2),lwd=2)
+# points(S[2:(n+1)],col='red',ylim=c(-1,2),lwd=1)
 
 
 # Particle filters
