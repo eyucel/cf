@@ -215,10 +215,10 @@ PL = function(y,alphas,betas,tau2s,sig2s,xs){
 }
 
 # Simulated data
-set.seed(98765)
-n     =  200
-alpha =  0.0
-beta  =  0.9
+# set.seed(98765)
+n     =  1000
+alpha =  1
+beta  =  0.65
 tau2  =  0.5
 sig2  =  1.0
 tau   = sqrt(tau2)
@@ -250,8 +250,8 @@ sB0   = sqrt(B0)
 
 # ONE LONG PL FILTER
 # ------------------
-set.seed(246521)
-N      = 100000
+# set.seed(246521)
+N      = 10000
 xs     = rnorm(N,m0,sC0)
 tau2s  = 1/rgamma(N,nu0/2,nu0*tau20/2)
 taus   = sqrt(tau2s)
@@ -274,67 +274,67 @@ for (i in 1:4){
   ts.plot(plm[,i,],xlab="",ylab="",main=names[i],col=cols,ylim=range(plm[ind,i,]))
   abline(h=true[i],lty=2)
 }
-
-# Particle filters
-# ----------------
-set.seed(246521)
-N    = 1000
-nsim = 100
-a    = 0.95
-qs   = array(0,c(3,nsim,n,5,3))
-for (s in 1:nsim){
-  print(s)
-  xs         = rnorm(N,m0,sC0)
-  sig2s      = 1/rgamma(N,n0/2,n0*sig20/2)
-  tau2s      = 1/rgamma(N,nu0/2,nu0*tau20/2)
-  taus       = sqrt(tau2s)
-  alphas     = rnorm(N,b0[1],taus*sB0[1])
-  betas      = rnorm(N,b0[2],taus*sB0[2])
-  qs[1,s,,,] = LW(y,alphas,betas,tau2s,sig2s,xs,a)
-  qs[2,s,,,] = Storvik(y,alphas,betas,tau2s,sig2s,xs)
-  qs[3,s,,,] = PL(y,alphas,betas,tau2s,sig2s,xs) 
-}
-
-# Mean square error
-quants = c("2.5th","50th","97.5th")
-filter = c("LW","Storvik","PL")
-mse    = array(0,c(3,n1,4,3))
-for (l in 1:3) 
-  for (k in 1:4) 
-    for (i in 1:nsim) 
-      mse[l,,k,]=mse[l,,k,]+(qs[l,i,ind,k,]-plm[ind,k,])^2
-sq.mse = sqrt(mse/nsim)  
-
-pdf(file=paste("comparison-",round(100*tau2),".pdf",sep=""),width=10,height=15)
-cols = c(grey(0.75),grey(0.5),grey(0.75))
-#cols = c(3,2,5)
-par(mfrow=c(4,3))
-for (k in 1:4){
-  L = min(qs[,,ind,k,])
-  U = max(qs[,,ind,k,])
-  for (l in 1:3){
-    plot(qs[l,1,,k,1],ylab=names[k],xlab="Time",main=filter[l],ylim=c(L,U),type="l",col=cols[1])
-    for (i in c(1,3,2)) for (j in 1:nsim) lines(qs[l,j,,k,i],col=cols[i])
-    for (i in c(1,3,2)) lines(plm[,k,i],lwd=1,col=1)  
-  }
-}  
-dev.off()
-
-pdf(file=paste("boxplot-",round(100*tau2),".pdf",sep=""),width=12,height=10)
-cols = c(grey(0.3),gray(0.5),grey(0.7))
-U    = c(0.275,0.175,0.45,1.25)
-par(mfrow=c(2,2))
-for (i in 1:4){
-  boxplot(sq.mse[1,,i,1],sq.mse[2,,i,1],sq.mse[3,,i,1],
-          sq.mse[1,,i,2],sq.mse[2,,i,2],sq.mse[3,,i,2],
-          sq.mse[1,,i,3],sq.mse[2,,i,3],sq.mse[3,,i,3],
-          outline=FALSE,ylab="Root MSE",xlab="Percentile",axes=FALSE,col=cols,ylim=c(0,U[i]))
-  axis(2);axis(1,at=c(2,5,8),lab=quants);box()
-  abline(v=3.5)
-  abline(v=6.5)
-  title(names[i])
-}
-legend(0.5,1.2,legend=filters,col=cols,cex=1.25,lwd=c(4,4,4),lty=c(1,1,1),bty="n")
-dev.off()
-
-
+# 
+# # Particle filters
+# # ----------------
+# set.seed(246521)
+# N    = 1000
+# nsim = 100
+# a    = 0.95
+# qs   = array(0,c(3,nsim,n,5,3))
+# for (s in 1:nsim){
+#   print(s)
+#   xs         = rnorm(N,m0,sC0)
+#   sig2s      = 1/rgamma(N,n0/2,n0*sig20/2)
+#   tau2s      = 1/rgamma(N,nu0/2,nu0*tau20/2)
+#   taus       = sqrt(tau2s)
+#   alphas     = rnorm(N,b0[1],taus*sB0[1])
+#   betas      = rnorm(N,b0[2],taus*sB0[2])
+#   qs[1,s,,,] = LW(y,alphas,betas,tau2s,sig2s,xs,a)
+#   qs[2,s,,,] = Storvik(y,alphas,betas,tau2s,sig2s,xs)
+#   qs[3,s,,,] = PL(y,alphas,betas,tau2s,sig2s,xs) 
+# }
+# 
+# # Mean square error
+# quants = c("2.5th","50th","97.5th")
+# filter = c("LW","Storvik","PL")
+# mse    = array(0,c(3,n1,4,3))
+# for (l in 1:3) 
+#   for (k in 1:4) 
+#     for (i in 1:nsim) 
+#       mse[l,,k,]=mse[l,,k,]+(qs[l,i,ind,k,]-plm[ind,k,])^2
+# sq.mse = sqrt(mse/nsim)  
+# 
+# pdf(file=paste("comparison-",round(100*tau2),".pdf",sep=""),width=10,height=15)
+# cols = c(grey(0.75),grey(0.5),grey(0.75))
+# # cols = c(3,2,5)
+# par(mfrow=c(4,3))
+# for (k in 1:4){
+#   L = min(qs[,,ind,k,])
+#   U = max(qs[,,ind,k,])
+#   for (l in 1:3){
+#     plot(qs[l,1,,k,1],ylab=names[k],xlab="Time",main=filter[l],ylim=c(L,U),type="l",col=cols[1])
+#     for (i in c(1,3,2)) for (j in 1:nsim) lines(qs[l,j,,k,i],col=cols[i])
+#     for (i in c(1,3,2)) lines(plm[,k,i],lwd=1,col=1)  
+#   }
+# }  
+# dev.off()
+# 
+# pdf(file=paste("boxplot-",round(100*tau2),".pdf",sep=""),width=12,height=10)
+# cols = c(grey(0.3),gray(0.5),grey(0.7))
+# U    = c(0.275,0.175,0.45,1.25)
+# par(mfrow=c(2,2))
+# for (i in 1:4){
+#   boxplot(sq.mse[1,,i,1],sq.mse[2,,i,1],sq.mse[3,,i,1],
+#           sq.mse[1,,i,2],sq.mse[2,,i,2],sq.mse[3,,i,2],
+#           sq.mse[1,,i,3],sq.mse[2,,i,3],sq.mse[3,,i,3],
+#           outline=FALSE,ylab="Root MSE",xlab="Percentile",axes=FALSE,col=cols,ylim=c(0,U[i]))
+#   axis(2);axis(1,at=c(2,5,8),lab=quants);box()
+#   abline(v=3.5)
+#   abline(v=6.5)
+#   title(names[i])
+# }
+# legend(0.5,1.2,legend=filter,col=cols,cex=1.25,lwd=c(4,4,4),lty=c(1,1,1),bty="n")
+# dev.off()
+# 
+# 

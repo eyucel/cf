@@ -51,8 +51,8 @@ PL = function(y,alphas,betas,tau2s,ps,qs,xs,zs){
     mus    = alphas+gammas*zs+betas*xs
     stdevs = exp(mus/2)
     stdevs1 = exp((alphas+betas*xs)/2)
-    weight = dnorm(y[t],0,stdevs)*(qs+(1-zs)*(1-qs)) + dnorm(y[t],0,stdevs1)*((1-zs)*ps+zs*(1-ps))
-#     print(weight)
+#     weight = dnorm(y[t],0,stdevs)*(qs+(1-zs)*(1-qs)) + dnorm(y[t],0,stdevs1)*((1-zs)*ps+zs*(1-ps))
+    weight = dnorm(y[t],0,stdevs)
     k      = sample(1:N,size=N,replace=T,prob=weight)
     alphas = alphas[k]
     betas  = betas[k]
@@ -63,18 +63,18 @@ PL = function(y,alphas,betas,tau2s,ps,qs,xs,zs){
     mus    = mus[k]
     xs1    = xs[k]
     zs1    = zs[k]
-    sig2s = exp(xs1/2)
+    sig2s = exp(xs1)
     # Propagating
     vars   = 1/(1/sig2s+1/tau2s)
     sds    = sqrt(vars)
-    means  = mus + vars*(y[t]/sig2s)
+    means  =  vars*(mus/tau2s +y[t]/sig2s)
     zero.index = zs1 == 0
     one.index = zs1 == 1
     ll = sum(zero.index)
     #     zs = zz[t+1,]
     zs[zero.index]     = rbinom(ll,1,1-ps[zero.index])
     zs[one.index]      = rbinom(N-ll,1,qs[one.index])
-    mus    = alphas+gammas*zs+betas*xs1
+#     mus    = alphas+gammas*zs+betas*xs1
     xs     = rnorm(N,means,sds)
 
 #     print(zs)
@@ -239,7 +239,7 @@ PL = function(y,alphas,betas,tau2s,ps,qs,xs,zs){
 }
 
 # Simulated data
-set.seed(98765)
+# set.seed(98765)
 n     =  1000
 alpha =  -1
 gamma = 1.5
@@ -287,7 +287,7 @@ sB0   = sqrt(B0)
 
 # ONE LONG PL FILTER
 # ------------------
-set.seed(246521)
+# set.seed(246521)
 N      = 10000
 xs     = rnorm(N,m0,sC0)
 zs = rbinom(N,1,.5)

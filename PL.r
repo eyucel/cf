@@ -1,4 +1,78 @@
-
+svm.pl = function(y,alphas,betas,tau2s,xs){#,b0,B0,c0,d0){
+  n      = length(y)
+  N      = length(xs)
+  nmix   = 7  
+  mu     = matrix(c(-11.40039,-5.24321,-9.83726,1.50746,-0.65098,0.52478,-2.35859),
+                  N,nmix,byrow=TRUE)
+  sig2   = matrix(c(5.795960,2.613690,5.179500,0.167350,0.640090,0.340230,1.262610),
+                  N,nmix,byrow=TRUE)
+  q      = matrix(c(0.007300,0.105560,0.000020,0.043950,0.340010,0.245660,0.257500),
+                  N,nmix,byrow=TRUE) 
+#   q = c(0.007300,0.105560,0.000020,0.043950,0.340010,0.245660,0.257500)
+#   mu = c(-11.40039,-5.24321,-9.83726,1.50746,-0.65098,0.52478,-2.35859)
+#   sig2 = c(5.795960,2.613690,5.179500,0.167350,0.640090,0.340230,1.262610)
+  quants = array(0,c(n,4,3))
+  z      = log(y^2)
+  s      = matrix(0,N,7)
+  s[,1]  = 1.0/B0[1]
+  s[,2]  = 0.0
+  s[,3]  = 1.0/B0[2]
+  s[,4]  = b0[1]/B0[1]
+  s[,5]  = b0[2]/B0[2]
+  s[,6]  = c0
+  s[,7]  = d0
+  num1   = rep(b0[1],N)
+  num2   = rep(b0[2],N)
+  for (t in 1:n){
+    #print(t)
+    mus    = matrix(alphas+betas*xs,N,nmix)
+#     print(mus[1,])
+#     scan(n=1)
+    probs  = q*dnorm(z[t],mus+mu,sqrt(sig2+tau2s))
+    weight = apply(probs,1,sum)
+    k      = sample(1:N,size=N,replace=TRUE,prob=weight)
+#     print(probs[1,])
+#     scan(n=1)
+    
+    xs1    = xs[k]
+    probs  = probs[k,]
+    mus    = mus[k,]
+    alphas = alphas[k]
+    betas  = betas[k]
+    tau2s  = tau2s[k]
+    so     = s[k,]
+    num1o  = num1[k]
+    num2o  = num2[k]	  
+    tau2ss = matrix(tau2s,N,nmix)
+    vars   = 1/(1/sig2+1/tau2ss)
+    sds    = sqrt(vars)
+    means  = vars*((z[t]-mu)/sig2 + mus/tau2ss)
+    for (i in 1:N){
+      comp  = sample(1:nmix,size=1,prob=probs[i,])
+      xs[i] = rnorm(1,means[i,comp],sds[i,comp])
+    }
+    s[,1]  = so[,1] + 1
+    s[,2]  = so[,2] + xs1
+    s[,3]  = so[,3] + xs1^2
+    s[,4]  = so[,4] + xs
+    s[,5]  = so[,5] + xs*xs1
+    s[,6]  = so[,6] + 1/2
+    m      = s[,1]*s[,3]-s[,2]^2
+    num1   = (s[,3]*s[,4]-s[,2]*s[,5])/m
+    num2   = (s[,1]*s[,5]-s[,2]*s[,4])/m
+    s[,7]  = so[,7] + (xs-num1-num2*xs1)*xs/2 + ((num1o-num1)*so[,4]+(num2o-num2)*so[,5])/2
+    tau2s  = 1/rgamma(N,s[,6],s[,7])
+    std    = sqrt(tau2s/m)
+    norm   = cbind(rnorm(N,0,std),rnorm(N,0,std))
+    alphas = num1 + sqrt(s[,3])*norm[,1]
+    betas  = num2 - s[,2]/sqrt(s[,3])*norm[,1]+sqrt(s[,1]-s[,2]^2/s[,3])*norm[,2]   
+    quants[t,1,] = quantile(alphas,c(0.05,0.5,0.95))
+    quants[t,2,] = quantile(betas,c(0.05,0.5,0.95))
+    quants[t,3,] = quantile(tau2s,c(0.05,0.5,0.95))
+    quants[t,4,] = quantile(exp(xs/2),c(0.05,0.5,0.95))
+  }
+  return(quants)
+}
 PL = function(y,alphas,betas,tau2s,xs){
   n      = length(y)
   N      = length(xs)
@@ -26,7 +100,7 @@ PL = function(y,alphas,betas,tau2s,xs){
     # Resampling
     mus    = alphas+betas*xs
     stdevs = exp(mus/2)
-    weight = dnorm(y[t],0,stdevs)
+    weight = dnorm(y[t],0,stdevs) 
     k      = sample(1:N,size=N,replace=T,prob=weight)
     alphas = alphas[k]
     betas  = betas[k]
@@ -34,11 +108,11 @@ PL = function(y,alphas,betas,tau2s,xs){
     
     mus    = mus[k]
     xs1    = xs[k]
-    sig2s = exp(xs1/2)
+    sig2s = exp(xs1)
     # Propagating
     vars   = 1/(1/sig2s+1/tau2s)
     sds    = sqrt(vars)
-    means  = mus + vars*(y[t]/sig2s)
+    means  = vars*(mus/tau2s + y[t]/sig2s)
     xs     = rnorm(N,means,sds)
     so     = s[k,]
     b1o  = b1[k]
@@ -60,33 +134,33 @@ PL = function(y,alphas,betas,tau2s,xs){
     
     s[,7]  = so[,7] + (xs-b1-b2*xs1)*xs + (b1o-b1)*so[,4]+(b2o-b2)*so[,5]
     
-    F.new = rbind(1,xs1[2])
-    C.old = diag(B0,2)
-    Q = 1
-    D1 = t(F.new) %*% C.old%*% F.new + Q 
-    
-    
-    #       C0 = diag(B0,2)
-    #       print( C0 %*%F.new[,j]  %*% solve(D1) %*% (xs[1]-t(F.new[,j])%*%b0))
-    CF = C.old %*% F.new
-    
-    D.new = t(F.new)  %*% CF +Q
-    D.inv = solve(D.new)
-    #       print(D.inv)
-    
-    m.old = b0
-    #       print(D.new)
-    #       print(CF %*% D.inv %*% (xs[j]-t(F.new[,j]) %*% m.old[j,]))
-    #       m.old = m.old + CF %*% D.inv %*% (xs[1]-t(F.new) %*% m.old)
-    print(D.inv %*% (xs[1]-t(F.new) %*% m.old))
-    C.old = C.old - CF %*% D.inv  %*% t(F.new) %*% C.old
-    d0 = d0 + t(xs[2]-t(F.new)%*% m.old)%*% D.inv %*% (xs[2]-t(F.new) %*% m.old)
-    m.old = m.old + CF %*% D.inv %*% (xs[2]-t(F.new) %*% m.old)
-
-    print(d0)
-    print(s[2,7])
-    scan(n=1)
-    
+#     F.new = rbind(1,xs1[2])
+#     C.old = diag(B0,2)
+#     Q = 1
+#     D1 = t(F.new) %*% C.old%*% F.new + Q 
+#     
+#     
+#     #       C0 = diag(B0,2)
+#     #       print( C0 %*%F.new[,j]  %*% solve(D1) %*% (xs[1]-t(F.new[,j])%*%b0))
+#     CF = C.old %*% F.new
+#     
+#     D.new = t(F.new)  %*% CF +Q
+#     D.inv = solve(D.new)
+#     #       print(D.inv)
+#     
+#     m.old = b0
+#     #       print(D.new)
+#     #       print(CF %*% D.inv %*% (xs[j]-t(F.new[,j]) %*% m.old[j,]))
+#     #       m.old = m.old + CF %*% D.inv %*% (xs[1]-t(F.new) %*% m.old)
+#     print(D.inv %*% (xs[1]-t(F.new) %*% m.old))
+#     C.old = C.old - CF %*% D.inv  %*% t(F.new) %*% C.old
+#     d0 = d0 + t(xs[2]-t(F.new)%*% m.old)%*% D.inv %*% (xs[2]-t(F.new) %*% m.old)
+#     m.old = m.old + CF %*% D.inv %*% (xs[2]-t(F.new) %*% m.old)
+# 
+#     print(d0)
+#     print(s[2,7])
+#     scan(n=1)
+#     
     
     tau2s  = 1/rgamma(N,s[,6]/2,s[,7]/2)
     std    = sqrt(tau2s/m)
@@ -108,9 +182,9 @@ PL = function(y,alphas,betas,tau2s,xs){
 # Simulated data
 set.seed(98765)
 n     =  1000
-alpha =  -.01
-beta  =  0.99
-tau2  =  0.15^2
+alpha =  -1
+beta  =  0.5
+tau2  =  .5
 sig2  =  1.0
 tau   = sqrt(tau2)
 x     = rep(alpha/(1-beta),n+1)
@@ -130,7 +204,7 @@ lines(x,col=2,lwd=2)
 m0    = 0.0
 
 
-C0 = 10
+C0 = 100
 c0    = 1
 d0    = 1
 tau20 = tau2
@@ -156,7 +230,8 @@ for (i in 1:3){
   abline(v=true[i],col=2)
 }
 print(date())
-plm    = PL(y,alphas,betas,tau2s,xs)
+# plm    = PL(y,alphas,betas,tau2s,xs)
+plm    = svm.pl(y,alphas,betas,tau2s,xs)
 print(date())
 cols = c(grey(0.5),1,grey(0.5))
 ind  = 10:n
