@@ -180,11 +180,11 @@ PL = function(y,alphas,betas,tau2s,xs){
 }
 
 # Simulated data
-set.seed(98765)
+# set.seed(98765)
 n     =  1000
-alpha =  -1
-beta  =  0.5
-tau2  =  .5
+alpha =  .3
+beta  =  0.7
+tau2  =  .3
 sig2  =  1.0
 tau   = sqrt(tau2)
 x     = rep(alpha/(1-beta),n+1)
@@ -204,7 +204,7 @@ lines(x,col=2,lwd=2)
 m0    = 0.0
 
 
-C0 = 100
+C0 = 10
 c0    = 1
 d0    = 1
 tau20 = tau2
@@ -215,7 +215,7 @@ sB0   = sqrt(B0)
 
 # ONE LONG PL FILTER
 # ------------------
-set.seed(246521)
+# set.seed(246521)
 N      = 10000
 xs     = rnorm(N,m0,sC0)
 tau2s  = 1/rgamma(N,c0/2,d0/2)
@@ -238,7 +238,7 @@ ind  = 10:n
 n1   = length(ind)
 par(mfrow=c(2,2))
 for (i in 1:4){
-  ts.plot(plm[,i,],xlab="",ylab="",main=names[i],col=cols,ylim=range(plm[ind,i,]))
+  ts.plot(plm[ind,i,],xlab="",ylab="",main=names[i],col=cols,ylim=range(plm[ind,i,]))
   abline(h=true[i],lty=2)
 }
 
