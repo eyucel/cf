@@ -14,13 +14,21 @@ svm.pl = function(y,alphas,betas,tau2s,xs){#,b0,B0,c0,d0){
   quants = array(0,c(n,4,3))
   z      = log(y^2)
   s      = matrix(0,N,7)
-  s[,1]  = 1.0/B0[1]
-  s[,2]  = 0.0
-  s[,3]  = 1.0/B0[2]
-  s[,4]  = b0[1]/B0[1]
-  s[,5]  = b0[2]/B0[2]
-  s[,6]  = c0
-  s[,7]  = d0
+  s[,1] = 1/B0[1]
+  s[,2] = 0
+  s[,3] = 0
+  s[,4] = 1/B0[2]
+  s[,5] = 0
+  s[,6] = 1/B0[2]
+  s[,7] = s[,1]*b0[1]+s[,2]*b0[2]+s[,3]*b0[3]
+  s[,8] = s[,2]*b0[1]+s[,4]*b0[2]+s[,5]*b0[3]
+  s[,9] = s[,3]*b0[1]+s[,5]*b0[2]+s[,6]*b0[3]
+  s[,10] = c0
+  s[,11] = d0
+  s[,12] = 1
+  s[,13] = 1
+  s[,14] = 1
+  s[,15] = 1
   num1   = rep(b0[1],N)
   num2   = rep(b0[2],N)
   for (t in 1:n){
@@ -268,7 +276,7 @@ for (i in 1:4){
 # n1   = length(ind)
 # par(mfrow=c(2,2))
 # for (i in 1:4){
-#   ts.plot(qs[50,,i,],xlab="",ylab="",main=names[i],col=cols,ylim=range(plm[ind,i,]))
+#   ts.plot(qs[50,,i,],xlab="",ylab=","wimain=names[i],col=cols,ylim=range(plm[ind,i,]))
 #   abline(h=true[i],lty=2)
 # }
 # 
