@@ -1,6 +1,7 @@
 library(msm)
 svm.pl = function(y,alphas,betas,tau2s,ps,qs,xs,zs){#,b0,B0,c0,d0){
   n      = length(y)
+  
   N      = length(xs)
   nmix   = 7  
   mu     = matrix(c(-11.40039,-5.24321,-9.83726,1.50746,-0.65098,0.52478,-2.35859),
@@ -10,8 +11,9 @@ svm.pl = function(y,alphas,betas,tau2s,ps,qs,xs,zs){#,b0,B0,c0,d0){
   q      = matrix(c(0.007300,0.105560,0.000020,0.043950,0.340010,0.245660,0.257500),
                   N,nmix,byrow=TRUE) 
 
-  quants = array(0,c(n,7,3))
-  z      = log(y^2)
+  quants = array(0,c(n,8,3))
+#   z      = log(y^2)
+  z = y
   s      = matrix(0,N,15)
   zmean=rep(0,n)
   
@@ -161,6 +163,7 @@ svm.pl = function(y,alphas,betas,tau2s,ps,qs,xs,zs){#,b0,B0,c0,d0){
     quants[t,5,] = quantile(ps,c(0.025,0.5,0.975))  
     quants[t,6,] = quantile(qs,c(0.025,0.5,0.975))  
     quants[t,7,] = quantile(zs,c(0.025,0.5,0.975))
+    quants[t,8,] = quantile(exp(xs/2),c(0.025,0.5,0.975))
     zmean[t] =  mean(zs)
   }
   return(list(quants=quants,zmean=zmean))
@@ -407,14 +410,14 @@ PL = function(y,alphas,betas,tau2s,ps,qs,xs,zs){
 # Simulated data
 # set.seed(98765)
 n     =  1000
-alpha =  -1.5
-gamma = 2
+alpha =  1
+gamma = 1
 beta  =  0.7
-tau2  =  .7
+tau2  =  1
 sig2  =  1.0
 tau   = sqrt(tau2)
-p0 = .98
-q0 = .9
+p0 = .99
+q0 = .5
 
 x     = rep(alpha/(1-beta),n+1)
 S = rep(0,n+1)
@@ -422,21 +425,28 @@ true  = c(alpha,gamma,beta,tau2,p0,q0)
 names = c("alpha","gamma","beta","tau2","p","q")
 
 
-for (t in 2:(n+1))
-  {
-  if (S[t-1] == 0)
-    S[t] = rbinom(1,1,1-p0)
-  if (S[t-1] == 1)
-    S[t] = rbinom(1,1,q0)
+# for (t in 2:(n+1))
+#   {
+#   if (S[t-1] == 0)
+#     S[t] = rbinom(1,1,1-p0)
+#   if (S[t-1] == 1)
+#     S[t] = rbinom(1,1,q0)
+# 
+#   x[t] = alpha+gamma*S[t]+beta*x[t-1]+tau*rnorm(1)}
+# x = x[2:(n+1)]
+# y = rnorm(n,0,exp(x/2))
+# # print(S)
+# par(mfrow=c(1,1))
+# plot(y,ylim=range(x,y),xlab="Time",ylab="",main="",pch=16)
+# lines(x,col=2,lwd=2)
 
-  x[t] = alpha+gamma*S[t]+beta*x[t-1]+tau*rnorm(1)}
-x = x[2:(n+1)]
-y = rnorm(n,0,exp(x/2))
-# print(S)
-par(mfrow=c(1,1))
-plot(y,ylim=range(x,y),xlab="Time",ylab="",main="",pch=16)
-lines(x,col=2,lwd=2)
-
+data = read.csv('OILPRICE.csv')
+prices = data[,2]
+n = length(prices)
+returns = diff(prices)/prices[1:(n-1)]
+logreturns = log(prices[2:n]/prices[1:(n-1)])[300:(n-1)]
+n = length(logreturns)
+y = returns[300:n]+rnorm(n-299,0,.00001)
 # Prior hyperparameters
 # ---------------------
 m0    = 0.0
@@ -477,18 +487,20 @@ plm = out$quants
 
 print(date())
 cols = c(grey(0.5),1,grey(0.5))
-ind  = 20:n
+ind  = 20:length(y)
 n1   = length(ind)
 par(mfrow=c(3,2))
 for (i in 1:6){
   ts.plot(plm[ind,i,],xlab="",ylab="",main=names[i],col=cols,ylim=range(plm[ind,i,]))
   abline(h=true[i],lty=2)
 }
-par(mfrow=c(3,1))
-ts.plot(S)
-ts.plot(plm[,7,2])
 
-ts.plot(out$zmean)
+
+par(mfrow=c(1,1))
+ts.plot(cbind(2*plm[,8,2],-2*plm[,8,2]))
+lines(returns*100,col='red')
+
+# ts.plot(out$zmean)
 # par(mfrow=c(1,1))
 # ts.plot(plm[,7,2],xlab="",ylab="",main="states",col=1,ylim=c(-1,2),lwd=2)
 # points(S[2:(n+1)],col='red',ylim=c(-1,2),lwd=1)

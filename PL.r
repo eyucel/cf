@@ -14,21 +14,13 @@ svm.pl = function(y,alphas,betas,tau2s,xs){#,b0,B0,c0,d0){
   quants = array(0,c(n,4,3))
   z      = log(y^2)
   s      = matrix(0,N,7)
-  s[,1] = 1/B0[1]
-  s[,2] = 0
-  s[,3] = 0
-  s[,4] = 1/B0[2]
-  s[,5] = 0
-  s[,6] = 1/B0[2]
-  s[,7] = s[,1]*b0[1]+s[,2]*b0[2]+s[,3]*b0[3]
-  s[,8] = s[,2]*b0[1]+s[,4]*b0[2]+s[,5]*b0[3]
-  s[,9] = s[,3]*b0[1]+s[,5]*b0[2]+s[,6]*b0[3]
-  s[,10] = c0
-  s[,11] = d0
-  s[,12] = 1
-  s[,13] = 1
-  s[,14] = 1
-  s[,15] = 1
+  s[,1]  = 1.0/B0[1]
+  s[,2]  = 0.0
+  s[,3]  = 1.0/B0[2]
+  s[,4]  = b0[1]/B0[1]
+  s[,5]  = b0[2]/B0[2]
+  s[,6]  = c0
+  s[,7]  = d0
   num1   = rep(b0[1],N)
   num2   = rep(b0[2],N)
   for (t in 1:n){
@@ -190,9 +182,9 @@ PL = function(y,alphas,betas,tau2s,xs){
 # Simulated data
 # set.seed(98765)
 n     =  1000
-alpha =  .3
-beta  =  0.7
-tau2  =  .3
+alpha =  0
+beta  =  0.4
+tau2  =  1
 sig2  =  1.0
 tau   = sqrt(tau2)
 x     = rep(alpha/(1-beta),n+1)
@@ -206,6 +198,13 @@ y = rnorm(n,0,exp(x/2))
 par(mfrow=c(1,1))
 plot(y,ylim=range(x,y),xlab="Time",ylab="",main="",pch=16)
 lines(x,col=2,lwd=2)
+data = read.csv('weeklyoilprice.csv')
+prices = data[,2]
+n = length(prices)
+returns = diff(prices)/prices[1:(n-1)]
+logreturns = log(prices[2:n]/prices[1:(n-1)])
+n = length(returns)
+y = returns*100+rnorm(n,0,0.00001)
 
 # Prior hyperparameters
 # ---------------------
@@ -249,6 +248,10 @@ for (i in 1:4){
   ts.plot(plm[ind,i,],xlab="",ylab="",main=names[i],col=cols,ylim=range(plm[ind,i,]))
   abline(h=true[i],lty=2)
 }
+par(mfrow=c(1,1))
+ts.plot(cbind(2*plm[,4,2],-2*plm[,4,2]))
+lines(returns*100,col='red')
+
 
 # Particle filters
 # ----------------

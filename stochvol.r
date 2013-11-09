@@ -252,38 +252,38 @@ lines(1+h05m,col=3,lwd=1)
 lines(1+h95m,col=3,lwd=1)
 legend(400,4,legend=c("h(t)","E(h(t)|data)","90%CI"),col=c(1,2,3),lty=rep(1,3),lwd=rep(1,3),bty="n")
 lines(abs(y)/max(abs(y)),type="h")
-# 
-# # Comparison
-# par(mfrow=c(1,1))
-# plot(h,type="l",ylim=c(0.0,max(h,mhn,mhm)),xlab="time",ylab="")
-# lines(h,col=1,lwd=1.5)
-# lines(mhn,col=2,lwd=1.5)
-# lines(mhm,col=3,lwd=1.5)
-# legend(400,2.5,legend=c("h(t)","normal approximation","mixture normals"),
-#        col=c(1,2,3),lty=rep(1,3),lwd=rep(1.5,3),bty="n")
-# 
-# # Comparison
-# par(mfrow=c(2,2))
-# plot(1:250,h[1:250],type="l",ylim=c(0.0,max(h,mhn,mhm)),xlab="time",ylab="")
-# lines(1:250,h[1:250],col=1,lwd=1.5)
-# lines(1:250,mhn[1:250],col=2,lwd=1.5)
-# lines(1:250,mhm[1:250],col=3,lwd=1.5)
-# plot(251:500,h[251:500],type="l",ylim=c(0.0,max(h,mhn,mhm)),xlab="time",ylab="")
-# lines(251:500,h[251:500],col=1,lwd=1.5)
-# lines(251:500,mhn[251:500],col=2,lwd=1.5)
-# lines(251:500,mhm[251:500],col=3,lwd=1.5)
-# legend(300,2.5,legend=c("h(t)","normal approximation","mixture normals"),
-#        col=c(1,2,3),lty=rep(1,3),lwd=rep(1.5,3),bty="n")
-# plot(501:750,h[501:750],type="l",ylim=c(0.0,max(h,mhn,mhm)),xlab="time",ylab="")
-# lines(501:750,h[501:750],col=1,lwd=1.5)
-# lines(501:750,mhn[501:750],col=2,lwd=1.5)
-# lines(501:750,mhm[501:750],col=3,lwd=1.5)
-# plot(501:750,h[751:n],type="l",ylim=c(0.0,max(h,mhn,mhm)),xlab="time",ylab="")
-# lines(501:750,h[751:n],col=1,lwd=1.5)
-# lines(501:750,mhn[751:n],col=2,lwd=1.5)
-# lines(501:750,mhm[751:n],col=3,lwd=1.5)
-# 
-# 
-# 
-# 
-# 
+
+# Comparison
+par(mfrow=c(1,1))
+plot(h,type="l",ylim=c(0.0,max(h,mhn,mhm)),xlab="time",ylab="")
+lines(h,col=1,lwd=1.5)
+lines(mhn,col=2,lwd=1.5)
+lines(mhm,col=3,lwd=1.5)
+legend(400,2.5,legend=c("h(t)","normal approximation","mixture normals"),
+       col=c(1,2,3),lty=rep(1,3),lwd=rep(1.5,3),bty="n")
+
+# Comparison
+par(mfrow=c(2,2))
+plot(1:250,h[1:250],type="l",ylim=c(0.0,max(h,mhn,mhm)),xlab="time",ylab="")
+lines(1:250,h[1:250],col=1,lwd=1.5)
+lines(1:250,mhn[1:250],col=2,lwd=1.5)
+lines(1:250,mhm[1:250],col=3,lwd=1.5)
+plot(251:500,h[251:500],type="l",ylim=c(0.0,max(h,mhn,mhm)),xlab="time",ylab="")
+lines(251:500,h[251:500],col=1,lwd=1.5)
+lines(251:500,mhn[251:500],col=2,lwd=1.5)
+lines(251:500,mhm[251:500],col=3,lwd=1.5)
+legend(300,2.5,legend=c("h(t)","normal approximation","mixture normals"),
+       col=c(1,2,3),lty=rep(1,3),lwd=rep(1.5,3),bty="n")
+plot(501:750,h[501:750],type="l",ylim=c(0.0,max(h,mhn,mhm)),xlab="time",ylab="")
+lines(501:750,h[501:750],col=1,lwd=1.5)
+lines(501:750,mhn[501:750],col=2,lwd=1.5)
+lines(501:750,mhm[501:750],col=3,lwd=1.5)
+plot(501:750,h[751:n],type="l",ylim=c(0.0,max(h,mhn,mhm)),xlab="time",ylab="")
+lines(501:750,h[751:n],col=1,lwd=1.5)
+lines(501:750,mhn[751:n],col=2,lwd=1.5)
+lines(501:750,mhm[751:n],col=3,lwd=1.5)
+
+
+
+
+
