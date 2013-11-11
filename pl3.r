@@ -12,8 +12,8 @@ svm.pl = function(y,alphas,betas,tau2s,ps,qs,xs,zs){#,b0,B0,c0,d0){
                   N,nmix,byrow=TRUE) 
 
   quants = array(0,c(n,8,3))
-#   z      = log(y^2)
-  z = y
+  z      = log(y^2)
+#   z = y
   s      = matrix(0,N,15)
   zmean=rep(0,n)
   
@@ -28,10 +28,10 @@ svm.pl = function(y,alphas,betas,tau2s,ps,qs,xs,zs){#,b0,B0,c0,d0){
   s[,9] = s[,3]*b0[1]+s[,5]*b0[2]+s[,6]*b0[3]
   s[,10] = c0
   s[,11] = d0
-  s[,12] = 1
-  s[,13] = 1
-  s[,14] = 1
-  s[,15] = 1
+  s[,12] = 0
+  s[,13] = 0
+  s[,14] = 0
+  s[,15] = 0
   blk.A = s[,4]*s[,6] - s[,5]^2
   blk.B = -(s[,2]*s[,6]-s[,3]*s[,5])
   blk.C = s[,2]*s[,5]-s[,3]*s[,5]
@@ -49,12 +49,12 @@ svm.pl = function(y,alphas,betas,tau2s,ps,qs,xs,zs){#,b0,B0,c0,d0){
   
   for (t in 1:n){
     #print(t)
-    mus    = matrix(alphas+gammas*zs+betas*xs,N,nmix)
-    mus1    = matrix(alphas+betas*xs,N,nmix)
+    mus1    = matrix(alphas+gammas+betas*xs,N,nmix)
+    mus    = matrix(alphas+betas*xs,N,nmix)
     #     print(mus[1,])
     #     scan(n=1)
 #     probs  = q*dnorm(z[t],mus+mu,sqrt(sig2+tau2s))
-    probs = q*(dnorm(z[t],mus+mu,sqrt(sig2+tau2s))*(qs*zs+(1-zs)*(1-qs)) + dnorm(z[t],mus1+mu,sqrt(sig2+tau2s))*((1-zs)*ps+zs*(1-ps)))
+    probs = q*(dnorm(z[t],mus1+mu,sqrt(sig2+tau2s))*(qs*zs+(1-zs)*(1-ps)) + dnorm(z[t],mus+mu,sqrt(sig2+tau2s))*((1-zs)*ps+zs*(1-qs)))
     
     weight = apply(probs,1,sum)
     k      = sample(1:N,size=N,replace=TRUE,prob=weight)
@@ -65,7 +65,9 @@ svm.pl = function(y,alphas,betas,tau2s,ps,qs,xs,zs){#,b0,B0,c0,d0){
     zs1    = zs[k]
     probs  = probs[k,]
     mus    = mus[k,]
+    mus1   = mus1[k,]
     alphas = alphas[k]
+    gammas = gammas[k]
     betas  = betas[k]
     tau2s  = tau2s[k]
     ps = ps[k]
@@ -74,21 +76,31 @@ svm.pl = function(y,alphas,betas,tau2s,ps,qs,xs,zs){#,b0,B0,c0,d0){
     b1o  = b1[k]
     b2o  = b2[k]    
     b3o  = b3[k]
-    tau2ss = matrix(tau2s,N,nmix)
-    vars   = 1/(1/sig2+1/tau2ss)
-    sds    = sqrt(vars)
-    means  = vars*((z[t]-mu)/sig2 + mus/tau2ss)
-    for (i in 1:N){
-      comp  = sample(1:nmix,size=1,prob=probs[i,])
-      xs[i] = rnorm(1,means[i,comp],sds[i,comp])
-    }
+    
     
     zero.index = zs1 == 0
     one.index = zs1 == 1
     ll = sum(zero.index)
     #     zs = zz[t+1,]
-    zs[zero.index]     = rbinom(ll,1,1-ps[zero.index])
-    zs[one.index]      = rbinom(N-ll,1,qs[one.index])
+    pp = q*dnorm(z[t],mus+mu,sqrt(sig2+tau2s))*((1-zs)*ps+zs*(1-qs))
+    qq = q*dnorm(z[t],mus1+mu,sqrt(sig2+tau2s))*(qs*zs+(1-zs)*(1-ps))
+    den = q*(dnorm(z[t],mus1+mu,sqrt(sig2+tau2s))*(qs*zs+(1-zs)*(1-ps)) + dnorm(z[t],mus+mu,sqrt(sig2+tau2s))*((1-zs)*ps+zs*(1-qs)))
+    ppp = apply(pp/den,1,sum)
+    qqq = apply(qq/den,1,sum)
+    zs[zero.index]     = rbinom(ll,1,1-ppp[zero.index])
+    zs[one.index]      = rbinom(N-ll,1,qqq[one.index])
+    
+    
+    tau2ss = matrix(tau2s,N,nmix)
+    vars   = 1/(1/sig2+1/tau2ss)
+    sds    = sqrt(vars)
+    means  = vars*((z[t]-mu)/sig2 + (alphas+gammas*zs+betas*xs)/tau2ss)
+    for (i in 1:N){
+      comp  = sample(1:nmix,size=1,prob=probs[i,])
+      xs[i] = rnorm(1,means[i,comp],sds[i,comp])
+    }
+    
+
     
     s[,1]  = so[,1] + 1
     s[,2]  = so[,2] + zs1
@@ -217,15 +229,16 @@ PL = function(y,alphas,betas,tau2s,ps,qs,xs,zs){
   for (t in 1:n){
 #     zs = zz[t,]
     # Resampling
-    mus    = alphas+gammas*zs+betas*xs
+    mus    = alphas+gammas+betas*xs
     stdevs = exp(mus/2)
     stdevs1 = exp((alphas+betas*xs)/2)
-#     weight = dnorm(y[t],0,stdevs)*(qs+(1-zs)*(1-qs)) + dnorm(y[t],0,stdevs1)*((1-zs)*ps+zs*(1-ps))
-    weight = dnorm(y[t],0,stdevs)
+    weight = dnorm(y[t],0,stdevs)*(qs+(1-zs)*(1-ps)) + dnorm(y[t],0,stdevs1)*((1-zs)*ps+zs*(1-qs))
+#     weight = dnorm(y[t],0,stdevs)
     k      = sample(1:N,size=N,replace=T,prob=weight)
     alphas = alphas[k]
     betas  = betas[k]
     tau2s  = tau2s[k]
+    gammas = gammas[k]
     ps = ps[k]
     qs = qs[k]
     
@@ -245,6 +258,7 @@ PL = function(y,alphas,betas,tau2s,ps,qs,xs,zs){
     zs[one.index]      = rbinom(N-ll,1,qs[one.index])
 #     mus    = alphas+gammas*zs+betas*xs1
     xs     = rnorm(N,means,sds)
+    xs = alphas+betas*xs + gammas*zs + rnorm(N,0,sqrt(tau2s))
 
 #     print(zs)
 #     print(qs)
@@ -410,43 +424,44 @@ PL = function(y,alphas,betas,tau2s,ps,qs,xs,zs){
 # Simulated data
 # set.seed(98765)
 n     =  1000
-alpha =  1
-gamma = 1
+alpha =  -1
+gamma = 1.5
 beta  =  0.7
-tau2  =  1
+tau2  =  .4
 sig2  =  1.0
 tau   = sqrt(tau2)
 p0 = .99
-q0 = .5
+q0 = .985
 
 x     = rep(alpha/(1-beta),n+1)
 S = rep(0,n+1)
+S[1] = rbinom(1,1,p0/(1-q0)/100)
 true  = c(alpha,gamma,beta,tau2,p0,q0)
 names = c("alpha","gamma","beta","tau2","p","q")
 
 
-# for (t in 2:(n+1))
-#   {
-#   if (S[t-1] == 0)
-#     S[t] = rbinom(1,1,1-p0)
-#   if (S[t-1] == 1)
-#     S[t] = rbinom(1,1,q0)
-# 
-#   x[t] = alpha+gamma*S[t]+beta*x[t-1]+tau*rnorm(1)}
-# x = x[2:(n+1)]
-# y = rnorm(n,0,exp(x/2))
-# # print(S)
-# par(mfrow=c(1,1))
-# plot(y,ylim=range(x,y),xlab="Time",ylab="",main="",pch=16)
-# lines(x,col=2,lwd=2)
+for (t in 2:(n+1))
+  {
+  if (S[t-1] == 0)
+    S[t] = rbinom(1,1,1-p0)
+  if (S[t-1] == 1)
+    S[t] = rbinom(1,1,q0)
 
-data = read.csv('OILPRICE.csv')
-prices = data[,2]
-n = length(prices)
-returns = diff(prices)/prices[1:(n-1)]
-logreturns = log(prices[2:n]/prices[1:(n-1)])[300:(n-1)]
-n = length(logreturns)
-y = returns[300:n]+rnorm(n-299,0,.00001)
+  x[t] = alpha+gamma*S[t]+beta*x[t-1]+tau*rnorm(1)}
+x = x[2:(n+1)]
+y = rnorm(n,0,exp(x/2))
+# print(S)
+par(mfrow=c(1,1))
+plot(y,ylim=range(x,y),xlab="Time",ylab="",main="",pch=16)
+lines(x,col=2,lwd=2)
+
+# data = read.csv('OILPRICE.csv')
+# prices = data[,2]
+# n = length(prices)
+# returns = diff(prices)/prices[1:(n-1)]
+# logreturns = log(prices[2:n]/prices[1:(n-1)])[300:(n-1)]
+# n = length(logreturns)
+# y = returns[300:n]+rnorm(n-299,0,.00001)
 # Prior hyperparameters
 # ---------------------
 m0    = 0.0
@@ -496,9 +511,9 @@ for (i in 1:6){
 }
 
 
-par(mfrow=c(1,1))
-ts.plot(cbind(2*plm[,8,2],-2*plm[,8,2]))
-lines(returns*100,col='red')
+# par(mfrow=c(1,1))
+# ts.plot(cbind(2*plm[,8,2],-2*plm[,8,2]))
+# lines(returns*100,col='red')
 
 # ts.plot(out$zmean)
 # par(mfrow=c(1,1))
