@@ -100,7 +100,7 @@ PL = function(y,alphas,betas,tau2s,xs){
     # Resampling
     mus    = alphas+betas*xs
     stdevs = exp(mus/2)
-    weight = dnorm(y[t],0,stdevs) 
+    weight = dnorm(y[t],0,stdevs)
     k      = sample(1:N,size=N,replace=T,prob=weight)
     alphas = alphas[k]
     betas  = betas[k]
@@ -113,7 +113,8 @@ PL = function(y,alphas,betas,tau2s,xs){
     vars   = 1/(1/sig2s+1/tau2s)
     sds    = sqrt(vars)
     means  = vars*(mus/tau2s + y[t]/sig2s)
-    xs     = rnorm(N,means,sds)
+#     xs     = rnorm(N,means,sds)
+    xs     = mus + rnorm(N,0,sqrt(tau2s))
     so     = s[k,]
     b1o  = b1[k]
     b2o  = b2[k]    
@@ -182,9 +183,9 @@ PL = function(y,alphas,betas,tau2s,xs){
 # Simulated data
 # set.seed(98765)
 n     =  1000
-alpha =  0
-beta  =  0.4
-tau2  =  1
+alpha =  -.2
+beta  =  0.9
+tau2  =  .15
 sig2  =  1.0
 tau   = sqrt(tau2)
 x     = rep(alpha/(1-beta),n+1)
@@ -198,13 +199,13 @@ y = rnorm(n,0,exp(x/2))
 par(mfrow=c(1,1))
 plot(y,ylim=range(x,y),xlab="Time",ylab="",main="",pch=16)
 lines(x,col=2,lwd=2)
-data = read.csv('weeklyoilprice.csv')
-prices = data[,2]
-n = length(prices)
-returns = diff(prices)/prices[1:(n-1)]
-logreturns = log(prices[2:n]/prices[1:(n-1)])
-n = length(returns)
-y = returns*100+rnorm(n,0,0.00001)
+# data = read.csv('weeklyoilprice.csv')
+# prices = data[,2]
+# n = length(prices)
+# returns = diff(prices)/prices[1:(n-1)]
+# logreturns = log(prices[2:n]/prices[1:(n-1)])
+# n = length(returns)
+# y = returns*100+rnorm(n,0,0.00001)
 
 # Prior hyperparameters
 # ---------------------
@@ -223,7 +224,7 @@ sB0   = sqrt(B0)
 # ONE LONG PL FILTER
 # ------------------
 # set.seed(246521)
-N      = 10000
+N      = 100000
 xs     = rnorm(N,m0,sC0)
 tau2s  = 1/rgamma(N,c0/2,d0/2)
 taus   = sqrt(tau2s)
@@ -237,8 +238,8 @@ for (i in 1:3){
   abline(v=true[i],col=2)
 }
 print(date())
-# plm    = PL(y,alphas,betas,tau2s,xs)
-plm    = svm.pl(y,alphas,betas,tau2s,xs)
+plm    = PL(y,alphas,betas,tau2s,xs)
+# plm    = svm.pl(y,alphas,betas,tau2s,xs)
 print(date())
 cols = c(grey(0.5),1,grey(0.5))
 ind  = 10:n
@@ -248,83 +249,105 @@ for (i in 1:4){
   ts.plot(plm[ind,i,],xlab="",ylab="",main=names[i],col=cols,ylim=range(plm[ind,i,]))
   abline(h=true[i],lty=2)
 }
-par(mfrow=c(1,1))
-ts.plot(cbind(2*plm[,4,2],-2*plm[,4,2]))
-lines(returns*100,col='red')
+# par(mfrow=c(1,1))
+# ts.plot(cbind(2*plm[,4,2],-2*plm[,4,2]))
+# lines(returns*100,col='red')
 
 
 # Particle filters
 # ----------------
-# set.seed(246521)
-# N    = 1000
-# nsim = 100
-# a    = 0.95
-# qs   = array(0,c(nsim,n,4,3))
-# for (s in 1:nsim){
-#   print(s)
-#   xs         = rnorm(N,m0,sC0)
-#   tau2s      = 1/rgamma(N,c0/2,d0/2)
-#   taus       = sqrt(tau2s)
-#   alphas     = rnorm(N,b0[1],taus*sB0[1])
-#   betas      = rnorm(N,b0[2],taus*sB0[2])
-# #   qs[1,s,,,] = LW(y,alphas,betas,tau2s,sig2s,xs,a)
-# #   qs[2,s,,,] = Storvik(y,alphas,betas,tau2s,sig2s,xs)
-#   qs[s,,,] = PL(y,alphas,betas,tau2s,xs) 
-# }
+set.seed(246521)
+N    = 1000
+nsim = 100
+a    = 0.95
+qs   = array(0,c(nsim,n,4,3))
+print(date())
+for (s in 1:nsim){
+  print(s)
+  xs         = rnorm(N,m0,sC0)
+  tau2s      = 1/rgamma(N,c0/2,d0/2)
+  taus       = sqrt(tau2s)
+  alphas     = rnorm(N,b0[1],taus*sB0[1])
+  betas      = rnorm(N,b0[2],taus*sB0[2])
+#   qs[1,s,,,] = LW(y,alphas,betas,tau2s,sig2s,xs,a)
+#   qs[2,s,,,] = Storvik(y,alphas,betas,tau2s,sig2s,xs)
+  qs[s,,,] = PL(y,alphas,betas,tau2s,xs) 
+
+}
+print(date())
+library(foreach)
+library(doParallel)
+registerDoParallel()
+print(date())
+qs1 = foreach(s=1:nsim) %dopar%{
+  
+  xs         = rnorm(N,m0,sC0)
+  tau2s      = 1/rgamma(N,c0/2,d0/2)
+  taus       = sqrt(tau2s)
+  alphas     = rnorm(N,b0[1],taus*sB0[1])
+  betas      = rnorm(N,b0[2],taus*sB0[2])
+  
+  PL(y,alphas,betas,tau2s,xs) 
+}
+for(s in 1:nsim)  
+  qs[s,,,] = qs1[[s]]
+
+
+print(date())
 # 
 # 
-# 
-# cols = c(grey(0.5),1,grey(0.5))
-# ind  = 10:n
-# n1   = length(ind)
-# par(mfrow=c(2,2))
-# for (i in 1:4){
-#   ts.plot(qs[50,,i,],xlab="",ylab=","wimain=names[i],col=cols,ylim=range(plm[ind,i,]))
-#   abline(h=true[i],lty=2)
-# }
-# 
-# 
-# # Mean square error
-# quants = c("2.5th","50th","97.5th")
-# filter = "PL"
-# mse    = array(0,c(n1,4,3))
-#   for (k in 1:3) 
-#     for (i in 1:nsim) 
-#       mse[,k,]=mse[,k,]+(qs[i,ind,k,]-plm[ind,k,])^2
-# sq.mse = sqrt(mse/nsim)  
-# 
-# 
-# cols = c(grey(0.75),grey(0.5),grey(0.75))
-# #cols = c(3,2,5)
-# par(mfrow=c(3,1))
-# for (k in 1:3){
-#   L = min(qs[,ind,k,])
-#   U = max(qs[,ind,k,])
-# 
-#     plot(qs[1,,k,1],ylab=names[k],xlab="Time",main=filter,ylim=c(L,U),type="l",col=cols[1])
-#     for (i in c(1,3,2)) for (j in 1:nsim) lines(qs[j,,k,i],col=cols[i])
-#     for (i in c(1,3,2)) lines(plm[,k,i],lwd=1,col=1)  
-#   
-# }  
-# 
+
+cols = c(grey(0.5),1,grey(0.5))
+ind  = 10:n
+n1   = length(ind)
+par(mfrow=c(2,2))
+for (i in 1:4){
+  ts.plot(qs[50,,i,],xlab="",ylab="",main=names[i],col=cols,ylim=range(plm[ind,i,]))
+  abline(h=true[i],lty=2)
+}
+
+
+# Mean square error
+quants = c("2.5th","50th","97.5th")
+filter = "PL"
+mse    = array(0,c(n1,4,3))
+  for (k in 1:4) 
+    for (i in 1:nsim) 
+      mse[,k,]=mse[,k,]+(qs[i,ind,k,]-plm[ind,k,])^2
+sq.mse = sqrt(mse/nsim)  
+
+
+cols = c(grey(0.75),grey(0.5),grey(0.75))
+#cols = c(3,2,5)
+par(mfrow=c(1,1))
+for (k in 1:3){
+  L = min(qs[,ind,k,])
+  U = max(qs[,ind,k,])
+
+    plot(qs[1,,k,1],ylab=names[k],xlab="Time",main=filter,ylim=c(L,U),type="l",col=cols[1])
+    for (i in c(1,3,2)) for (j in 1:nsim) lines(qs[j,,k,i],col=cols[i])
+    for (i in c(1,3,2)) lines(plm[,k,i],lwd=1,col=1)  
+  
+}  
+
 # 
 # 
 # cols = c(grey(0.3),gray(0.5),grey(0.7))
 # U    = c(0.275,0.175,0.45,1.25)
 # par(mfrow=c(2,2))
 # for (i in 1:3){
-#   boxplot(sq.mse[1,,i,1],sq.mse[2,,i,1],sq.mse[3,,i,1],
-#           sq.mse[1,,i,2],sq.mse[2,,i,2],sq.mse[3,,i,2],
-#           sq.mse[1,,i,3],sq.mse[2,,i,3],sq.mse[3,,i,3],
+#   boxplot(sq.mse[,i,1],
+#           sq.mse[,i,2],
+#           sq.mse[,i,3],
 #           outline=FALSE,ylab="Root MSE",xlab="Percentile",axes=FALSE,col=cols,ylim=c(0,U[i]))
 #   axis(2);axis(1,at=c(2,5,8),lab=quants);box()
 #   abline(v=3.5)
 #   abline(v=6.5)
 #   title(names[i])
 # }
-# #legend(0.5,1.2,legend=filters,col=cols,cex=1.25,lwd=c(4,4,4),lty=c(1,1,1),bty="n")
-# 
-# 
+#legend(0.5,1.2,legend=filters,col=cols,cex=1.25,lwd=c(4,4,4),lty=c(1,1,1),bty="n")
+
+
 
 
 

@@ -244,8 +244,8 @@ PL = function(y,alphas,betas,tau2s,ps,qs,xs,zs){
     zs[zero.index]     = rbinom(ll,1,1-ps[zero.index])
     zs[one.index]      = rbinom(N-ll,1,qs[one.index])
 #     mus    = alphas+gammas*zs+betas*xs1
-    xs     = rnorm(N,means,sds)
-
+#     xs     =  rnorm(N,means,sds)
+    xs = mus + rnorm(N,0,sqrt(tau2s))
 #     print(zs)
 #     print(qs)
 #     print(ps)
@@ -388,8 +388,8 @@ PL = function(y,alphas,betas,tau2s,ps,qs,xs,zs){
 #     gammas = rtnorm(N,mean=b2,lower=0)
     betas  = b3 + L31*norm[,1] + L32 * norm[,2] + L33 * norm[,3]
     
-#     gamma.mean = b2 - 1/s[,4]*(s[,2]*(alphas-b1)+s[,5]*(betas-b3))
-#     gammas = rtnorm(N,gamma.mean,sd = sqrt(tau2s/s[,4]),lower=0)
+    gamma.mean = b2 - 1/s[,4]*(s[,2]*(alphas-b1)+s[,5]*(betas-b3))
+    gammas = rtnorm(N,gamma.mean,sd = sqrt(tau2s/s[,4]),lower=0)
     
     ps = rbeta(N,s[,12]+1,s[,13]+1)
     qs = rbeta(N,s[,15]+1,s[,14]+1)
@@ -440,13 +440,13 @@ names = c("alpha","gamma","beta","tau2","p","q")
 # plot(y,ylim=range(x,y),xlab="Time",ylab="",main="",pch=16)
 # lines(x,col=2,lwd=2)
 
-data = read.csv('OILPRICE.csv')
-prices = data[,2]
-n = length(prices)
-returns = diff(prices)/prices[1:(n-1)]
-logreturns = log(prices[2:n]/prices[1:(n-1)])[300:(n-1)]
-n = length(logreturns)
-y = returns[300:n]+rnorm(n-299,0,.00001)
+# data = read.csv('OILPRICE.csv')
+# prices = data[,2]
+# n = length(prices)
+# returns = diff(prices)/prices[1:(n-1)]
+# logreturns = log(prices[2:n]/prices[1:(n-1)])[300:(n-1)]
+# n = length(logreturns)
+# y = returns[300:n]+rnorm(n-299,0,.00001)
 # Prior hyperparameters
 # ---------------------
 m0    = 0.0
@@ -481,9 +481,9 @@ for (i in 1:4){
   abline(v=true[i],col=2)
 }
 print(date())
-# plm    = PL(y,alphas,betas,tau2s,ps,qs,xs,zs)
-out   = svm.pl(y,alphas,betas,tau2s,ps,qs,xs,zs)
-plm = out$quants
+plm    = PL(y,alphas,betas,tau2s,ps,qs,xs,zs)
+# out   = svm.pl(y,alphas,betas,tau2s,ps,qs,xs,zs)
+# plm = out$quants
 
 print(date())
 cols = c(grey(0.5),1,grey(0.5))
