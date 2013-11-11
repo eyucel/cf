@@ -54,7 +54,9 @@ svm.pl = function(y,alphas,betas,tau2s,ps,qs,xs,zs){#,b0,B0,c0,d0){
     #     print(mus[1,])
     #     scan(n=1)
 #     probs  = q*dnorm(z[t],mus+mu,sqrt(sig2+tau2s))
-    probs = q*(dnorm(z[t],mus1+mu,sqrt(sig2+tau2s))*(qs*zs+(1-zs)*(1-ps)) + dnorm(z[t],mus+mu,sqrt(sig2+tau2s))*((1-zs)*ps+zs*(1-qs)))
+    left = q*(dnorm(z[t],mus1+mu,sqrt(sig2+tau2s))*(qs*zs+(1-zs)*(1-ps)))
+    right = q*(dnorm(z[t],mus+mu,sqrt(sig2+tau2s))*((1-zs)*ps+zs*(1-qs)))
+    probs = left+right
     
     weight = apply(probs,1,sum)
     k      = sample(1:N,size=N,replace=TRUE,prob=weight)
@@ -82,19 +84,23 @@ svm.pl = function(y,alphas,betas,tau2s,ps,qs,xs,zs){#,b0,B0,c0,d0){
     one.index = zs1 == 1
     ll = sum(zero.index)
     #     zs = zz[t+1,]
-    pp = q*dnorm(z[t],mus+mu,sqrt(sig2+tau2s))*((1-zs)*ps+zs*(1-qs))
-    qq = q*dnorm(z[t],mus1+mu,sqrt(sig2+tau2s))*(qs*zs+(1-zs)*(1-ps))
-    den = q*(dnorm(z[t],mus1+mu,sqrt(sig2+tau2s))*(qs*zs+(1-zs)*(1-ps)) + dnorm(z[t],mus+mu,sqrt(sig2+tau2s))*((1-zs)*ps+zs*(1-qs)))
-    ppp = apply(pp/den,1,sum)
-    qqq = apply(qq/den,1,sum)
-    zs[zero.index]     = rbinom(ll,1,1-ppp[zero.index])
-    zs[one.index]      = rbinom(N-ll,1,qqq[one.index])
+    pp = apply(left[k,],1,sum)/weight[k]
+    qq = apply(right[k,],1,sum)/weight[k]
     
     
+#     print(sum(pp<1))
+#     print(sum(qq<1))
+    
+    zs[zero.index]     = rbinom(ll,1,1-pp[zero.index])
+    zs[one.index]      = rbinom(N-ll,1,qq[one.index])
+
+#     scan(n=1)
+#     print(zs)
     tau2ss = matrix(tau2s,N,nmix)
     vars   = 1/(1/sig2+1/tau2ss)
     sds    = sqrt(vars)
-    means  = vars*((z[t]-mu)/sig2 + (alphas+gammas*zs+betas*xs)/tau2ss)
+    mus = matrix(alphas+gammas*zs+betas*xs,N,nmix)
+    means  = vars*((z[t]-mu)/sig2 + mus/tau2ss)
     for (i in 1:N){
       comp  = sample(1:nmix,size=1,prob=probs[i,])
       xs[i] = rnorm(1,means[i,comp],sds[i,comp])
