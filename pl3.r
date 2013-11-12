@@ -28,10 +28,10 @@ svm.pl = function(y,alphas,betas,tau2s,ps,qs,xs,zs){#,b0,B0,c0,d0){
   s[,9] = s[,3]*b0[1]+s[,5]*b0[2]+s[,6]*b0[3]
   s[,10] = c0
   s[,11] = d0
-  s[,12] = 0
-  s[,13] = 0
-  s[,14] = 0
-  s[,15] = 0
+  s[,12] = 5
+  s[,13] = 5
+  s[,14] = 5
+  s[,15] = 5
   blk.A = s[,4]*s[,6] - s[,5]^2
   blk.B = -(s[,2]*s[,6]-s[,3]*s[,5])
   blk.C = s[,2]*s[,5]-s[,3]*s[,5]
@@ -54,14 +54,17 @@ svm.pl = function(y,alphas,betas,tau2s,ps,qs,xs,zs){#,b0,B0,c0,d0){
 #     print(zo)
     zero.index = zo == 0
     one.index = zo == 1
-    ll = sum(zero.index)
+#     ll = sum(zero.index)
 #     print(zero.index)
 #     print(1-ps[zero.index])
 #     print(qs[one.index])
 #     zs[zero.index]     = rbinom(ll,1,1-ps[zero.index])
 #     zs[one.index]      = rbinom(N-ll,1,qs[one.index])
     
-    zs = rbinom(N,1,1-ps)*zero.index
+
+#     zs = (apply(cbind(ps,1-ps),1,which.max)-1)*zero.index
+#     zs = zs+(apply(cbind(1-qs,qs),1,which.max)-1)*one.index
+    zs = rbinom(N,1,1-ps)*zero.index    
     zs = zs+rbinom(N,1,qs)*one.index
 #     print(zs)
     #print(t)
@@ -126,6 +129,11 @@ svm.pl = function(y,alphas,betas,tau2s,ps,qs,xs,zs){#,b0,B0,c0,d0){
     tau2ss = matrix(tau2s,N,nmix)
     vars   = 1/(1/sig2+1/tau2ss)
     sds    = sqrt(vars)
+    
+    
+    
+  #     zs = rbinom(N,1,1-ps)*zero.index    
+  #     zs = zs+rbinom(N,1,qs)*one.index    
 #     mus.temp = matrix(alphas+gammas*zs+betas*xs1,N,nmix)
     means  = vars*((z[t]-mu)/sig2 + mus/tau2ss)
     for (i in 1:N){
@@ -146,9 +154,13 @@ svm.pl = function(y,alphas,betas,tau2s,ps,qs,xs,zs){#,b0,B0,c0,d0){
     s[,9]  = so[,9] + xs*xs1
     s[,10]  = so[,10] + 1
     
-    zero.index = zo == 0
-    one.index = zo == 1
-    
+
+#     zero.index = zo == 0
+#     one.index = zo == 1
+#     
+# =======
+    zero.index = zs == 0
+    one.index = zs == 1    
     zero.index.2 = zs1 == 0
     one.index.2 = zs1 == 1
 #     s[zero.index,12] = so[zero.index,12]+zo[zero.index]-zs1[zero.index]+1
@@ -553,8 +565,8 @@ for (i in 1:6){
   ts.plot(plm[ind,i,],xlab="",ylab="",main=names[i],col=cols,ylim=range(plm[ind,i,]))
   abline(h=true[i],lty=2)
 }
-
-
+par(mfrow=c(1,1))
+ts.plot(plm[ind,7,],xlab="",ylab="",main=names[i],col=cols,ylim=range(plm[ind,i,]))
 # par(mfrow=c(1,1))
 # ts.plot(cbind(2*plm[,8,2],-2*plm[,8,2]))
 # lines(returns*100,col='red')
