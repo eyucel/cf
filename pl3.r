@@ -58,8 +58,11 @@ svm.pl = function(y,alphas,betas,tau2s,ps,qs,xs,zs){#,b0,B0,c0,d0){
 #     print(zero.index)
 #     print(1-ps[zero.index])
 #     print(qs[one.index])
-    zs[zero.index]     = rbinom(ll,1,1-ps[zero.index])
-    zs[one.index]      = rbinom(N-ll,1,qs[one.index])
+#     zs[zero.index]     = rbinom(ll,1,1-ps[zero.index])
+#     zs[one.index]      = rbinom(N-ll,1,qs[one.index])
+    
+    zs = rbinom(N,1,1-ps)*zero.index
+    zs = zs+rbinom(N,1,qs)*one.index
 #     print(zs)
     #print(t)
 #     mus1    = matrix(alphas+gammas+betas*xs,N,nmix)
@@ -464,9 +467,9 @@ PL = function(y,alphas,betas,tau2s,ps,qs,xs,zs){
 
 # Simulated data
 # set.seed(98765)
-n     =  1000
+n     =  500
 alpha =  -1
-gamma = 1
+gamma = 1.5
 beta  =  0.5
 tau2  =  .2
 #sig2  =  1.0
