@@ -46,23 +46,39 @@ svm.pl = function(y,alphas,betas,tau2s,ps,qs,xs,zs){#,b0,B0,c0,d0){
   b1   = (s[,7]*blk.A + s[,8] * blk.B + s[,9] * blk.C)/m
   b2   = (s[,7]*blk.B + s[,8] * blk.E + s[,9] * blk.F)/m
   b3   = (s[,7]*blk.C + s[,8] * blk.F + s[,9] * blk.I)/m
-  
+  zs1 = zs
   for (t in 1:n){
+    
+    zo = zs1
+    
+#     print(zo)
+    zero.index = zo == 0
+    one.index = zo == 1
+    ll = sum(zero.index)
+#     print(zero.index)
+#     print(1-ps[zero.index])
+#     print(qs[one.index])
+    zs[zero.index]     = rbinom(ll,1,1-ps[zero.index])
+    zs[one.index]      = rbinom(N-ll,1,qs[one.index])
+#     print(zs)
     #print(t)
-    mus1    = matrix(alphas+gammas+betas*xs,N,nmix)
-    mus    = matrix(alphas+betas*xs,N,nmix)
+#     mus1    = matrix(alphas+gammas+betas*xs,N,nmix)
+#     mus    = matrix(alphas+betas*xs,N,nmix)
+    mus = matrix(alphas+gammas*zs+betas*xs,N,nmix)
+#     print(mus)
     #     print(mus[1,])
     #     scan(n=1)
-    #     probs  = q*dnorm(z[t],mus+mu,sqrt(sig2+tau2s))
-    switch1 = qs*zs + (1-zs)*(1-ps)
-    switch0 = (1-zs)*ps + zs*(1-qs)
-    left = q*(dnorm(z[t],mus1+mu,sqrt(sig2+tau2s)))
-    right = q*(dnorm(z[t],mus+mu,sqrt(sig2+tau2s)))
-    probs = left*switch1+right*switch0
-    lefts = apply(left,1,sum)
-    rights = apply(right,1,sum)
-    #     weight = apply(probs,1,sum)
-    weight = lefts*switch1+rights*switch0
+        probs  = q*dnorm(z[t],mus+mu,sqrt(sig2+tau2s))
+#     switch1 = qs*zs + (1-zs)*(1-ps)
+#     switch0 = 1-switch1 #(1-zs)*ps + zs*(1-qs)
+#     left = q*(dnorm(z[t],mus1+mu,sqrt(sig2+tau2s)))
+#     right = q*(dnorm(z[t],mus+mu,sqrt(sig2+tau2s)))
+#     probs = left*switch1+right*switch0
+#     lefts = apply(left,1,sum)
+#     rights = apply(right,1,sum)
+#     weight = lefts*switch1+rights*switch0
+        weight = apply(probs,1,sum)
+    
     #     scan(n=1)
     k      = sample(1:N,size=N,replace=TRUE,prob=weight)
     #     print(probs[1,])
@@ -70,9 +86,10 @@ svm.pl = function(y,alphas,betas,tau2s,ps,qs,xs,zs){#,b0,B0,c0,d0){
     
     xs1    = xs[k]
     zs1    = zs[k]
+#     print(zs1)
     probs  = probs[k,]
     mus    = mus[k,]
-    mus1   = mus1[k,]
+#     mus1   = mus1[k,]
     alphas = alphas[k]
     gammas = gammas[k]
     betas  = betas[k]
@@ -85,30 +102,28 @@ svm.pl = function(y,alphas,betas,tau2s,ps,qs,xs,zs){#,b0,B0,c0,d0){
     b3o  = b3[k]
     
     
-    zero.index = zs1 == 0
-    one.index = zs1 == 1
-    ll = sum(zero.index)
+
     
-    switch1 = qs*zs1 + (1-zs1)*(1-ps)
-    switch0 = (1-zs1)*ps + zs1*(1-qs)
+    
+#     switch1 = qs*zs1 + (1-zs1)*(1-ps)
+#     switch0 = 1-switch1 #(1-zs1)*ps + zs1*(1-qs)
     
     #     zs = zz[t+1,]
-    pp = lefts[k]*switch1/weight[k]
-    qq = rights[k]*switch0/weight[k]
+#     pp = lefts[k]*switch1/weight[k]
+#     qq = rights[k]*switch0/weight[k]
     
     
     #     print(sum(pp<1))
     #     print(sum(qq<1))
     
-    zs[zero.index]     = rbinom(ll,1,1-pp[zero.index])
-    zs[one.index]      = rbinom(N-ll,1,qq[one.index])
+
     
     #     scan(n=1)
     #     print(zs)
     tau2ss = matrix(tau2s,N,nmix)
     vars   = 1/(1/sig2+1/tau2ss)
     sds    = sqrt(vars)
-    mus = matrix(alphas+gammas*zs+betas*xs,N,nmix)
+#     mus.temp = matrix(alphas+gammas*zs+betas*xs1,N,nmix)
     means  = vars*((z[t]-mu)/sig2 + mus/tau2ss)
     for (i in 1:N){
       comp  = sample(1:nmix,size=1,prob=probs[i,])
@@ -128,11 +143,14 @@ svm.pl = function(y,alphas,betas,tau2s,ps,qs,xs,zs){#,b0,B0,c0,d0){
     s[,9]  = so[,9] + xs*xs1
     s[,10]  = so[,10] + 1
     
-    s[zero.index,12] = so[zero.index,12]+zs1[zero.index]-zs[zero.index]+1
-    s[zero.index,13] = so[zero.index,13]+zs[zero.index]
-    s[one.index,14] = so[one.index,14]+zs1[one.index]-zs[one.index]
-    s[one.index,15] = so[one.index,15]+zs[one.index]-zs1[one.index]+1
+    zero.index = zo == 0
+    one.index = zo == 1
     
+    s[zero.index,12] = so[zero.index,12]+zo[zero.index]-zs1[zero.index]+1
+    s[zero.index,13] = so[zero.index,13]+zs1[zero.index]
+    s[one.index,14] = so[one.index,14]+zo[one.index]-zs1[one.index]
+    s[one.index,15] = so[one.index,15]+zs1[one.index]-zo[one.index]+1
+#     print(s[,12:15])
     blk.A = s[,4]*s[,6] - s[,5]^2
     blk.B = -(s[,2]*s[,6]-s[,3]*s[,5])
     blk.C = s[,2]*s[,5]-s[,3]*s[,4]
@@ -181,7 +199,9 @@ svm.pl = function(y,alphas,betas,tau2s,ps,qs,xs,zs){#,b0,B0,c0,d0){
     
     ps = rbeta(N,s[,12]+1,s[,13]+1)
     qs = rbeta(N,s[,15]+1,s[,14]+1)
-    
+#     print(ps)
+#     print(qs)
+#     scan(n=1)
     # Storing quantiles
     quants[t,1,] = quantile(alphas,c(0.025,0.5,0.975))
     quants[t,2,] = quantile(gammas,c(0.025,0.5,0.975))
@@ -438,12 +458,12 @@ PL = function(y,alphas,betas,tau2s,ps,qs,xs,zs){
 
 # Simulated data
 # set.seed(98765)
-n     =  1000
+n     =  200
 alpha =  -1
-gamma = 1.5
-beta  =  0.7
-tau2  =  .4
-sig2  =  1.0
+gamma = 1
+beta  =  0.5
+tau2  =  .2
+#sig2  =  1.0
 tau   = sqrt(tau2)
 p0 = .99
 q0 = .985
@@ -454,7 +474,7 @@ S[1] = rbinom(1,1,p0/(1-q0)/100)
 true  = c(alpha,gamma,beta,tau2,p0,q0)
 names = c("alpha","gamma","beta","tau2","p","q")
 
-
+# S = c(1,1,1,1,1,0,0,0,0,0,0)
 for (t in 2:(n+1))
 {
   if (S[t-1] == 0)
@@ -465,7 +485,7 @@ for (t in 2:(n+1))
   x[t] = alpha+gamma*S[t]+beta*x[t-1]+tau*rnorm(1)}
 x = x[2:(n+1)]
 y = rnorm(n,0,exp(x/2))
-# print(S)
+print(S)
 par(mfrow=c(1,1))
 plot(y,ylim=range(x,y),xlab="Time",ylab="",main="",pch=16)
 lines(x,col=2,lwd=2)
@@ -517,7 +537,7 @@ plm = out$quants
 
 print(date())
 cols = c(grey(0.5),1,grey(0.5))
-ind  = 20:length(y)
+ind  = 1:length(y)
 n1   = length(ind)
 par(mfrow=c(3,2))
 for (i in 1:6){
@@ -530,10 +550,10 @@ for (i in 1:6){
 # ts.plot(cbind(2*plm[,8,2],-2*plm[,8,2]))
 # lines(returns*100,col='red')
 
-# ts.plot(out$zmean)
-# par(mfrow=c(1,1))
-# ts.plot(plm[,7,2],xlab="",ylab="",main="states",col=1,ylim=c(-1,2),lwd=2)
-# points(S[2:(n+1)],col='red',ylim=c(-1,2),lwd=1)
+ts.plot(out$zmean)
+par(mfrow=c(1,1))
+ts.plot(plm[,7,2],xlab="",ylab="",main="states",col=1,ylim=c(-1,2),lwd=2)
+points(S[2:(n+1)],col='red',ylim=c(-1,2),lwd=1)
 
 
 # Particle filters
