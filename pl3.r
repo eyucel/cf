@@ -146,8 +146,8 @@ svm.pl = function(y,alphas,betas,tau2s,ps,qs,xs,zs){#,b0,B0,c0,d0){
     s[,9]  = so[,9] + xs*xs1
     s[,10]  = so[,10] + 1
     
-    zero.index = zs == 0
-    one.index = zs == 1
+    zero.index = zo == 0
+    one.index = zo == 1
     
     zero.index.2 = zs1 == 0
     one.index.2 = zs1 == 1
@@ -561,8 +561,8 @@ for (i in 1:6){
 
 ts.plot(out$zmean)
 par(mfrow=c(1,1))
-ts.plot(plm[,7,2],xlab="",ylab="",main="states",col=1,ylim=c(-1,2),lwd=2)
-points(S[2:(n+1)],col='red',ylim=c(-1,2),lwd=1)
+ts.plot(out$zmean,xlab="",ylab="",main="states",col=1,ylim=c(-1,2),lwd=2)
+lines(S[2:(n+1)],col='red',ylim=c(-1,2),lwd=1)
 
 
 # Particle filters
