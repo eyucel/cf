@@ -54,11 +54,16 @@ svm.pl = function(y,alphas,betas,tau2s,ps,qs,xs,zs){#,b0,B0,c0,d0){
     #     print(mus[1,])
     #     scan(n=1)
 #     probs  = q*dnorm(z[t],mus+mu,sqrt(sig2+tau2s))
-    left = q*(dnorm(z[t],mus1+mu,sqrt(sig2+tau2s))*(qs*zs+(1-zs)*(1-ps)))
-    right = q*(dnorm(z[t],mus+mu,sqrt(sig2+tau2s))*((1-zs)*ps+zs*(1-qs)))
-    probs = left+right
-    
-    weight = apply(probs,1,sum)
+    switch1 = qs*zs + (1-zs)*(1-ps)
+    switch0 = (1-zs)*ps + zs*(1-qs)
+    left = q*(dnorm(z[t],mus1+mu,sqrt(sig2+tau2s)))
+    right = q*(dnorm(z[t],mus+mu,sqrt(sig2+tau2s)))
+    probs = left*switch1+right*switch0
+    lefts = apply(left,1,sum)
+    rights = apply(right,1,sum)
+#     weight = apply(probs,1,sum)
+    weight = lefts*switch1+rights*switch0
+#     scan(n=1)
     k      = sample(1:N,size=N,replace=TRUE,prob=weight)
     #     print(probs[1,])
     #     scan(n=1)
@@ -83,9 +88,13 @@ svm.pl = function(y,alphas,betas,tau2s,ps,qs,xs,zs){#,b0,B0,c0,d0){
     zero.index = zs1 == 0
     one.index = zs1 == 1
     ll = sum(zero.index)
+    
+    switch1 = qs*zs + (1-zs)*(1-ps)
+    switch0 = (1-zs)*ps + zs*(1-qs)
+    
     #     zs = zz[t+1,]
-    pp = apply(left[k,],1,sum)/weight[k]
-    qq = apply(right[k,],1,sum)/weight[k]
+    pp = lefts[k]*switch1/weight[k]
+    qq = rights[k]*switch0/weight[k]
     
     
 #     print(sum(pp<1))
