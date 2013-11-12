@@ -146,11 +146,12 @@ svm.pl = function(y,alphas,betas,tau2s,ps,qs,xs,zs){#,b0,B0,c0,d0){
     zero.index = zo == 0
     one.index = zo == 1
     
-    s[zero.index,12] = so[zero.index,12]+zo[p = seq(.01,1,.01)
-]-zs1[zero.index]+1
+
+    s[zero.index,12] = so[zero.index,12]+zo[zero.index]-zs1[zero.index]+1
     s[zero.index,13] = so[zero.index,13]+zs1[zero.index]
     s[one.index,14] = so[one.index,14]+zo[one.index]-zs1[one.index]
     s[one.index,15] = so[one.index,15]+zs1[one.index]-zo[one.index]+1
+    
 #     print(s[,12:15])
     blk.A = s[,4]*s[,6] - s[,5]^2
     blk.B = -(s[,2]*s[,6]-s[,3]*s[,5])
