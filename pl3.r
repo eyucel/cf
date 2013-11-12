@@ -89,8 +89,8 @@ svm.pl = function(y,alphas,betas,tau2s,ps,qs,xs,zs){#,b0,B0,c0,d0){
     one.index = zs1 == 1
     ll = sum(zero.index)
     
-    switch1 = qs*zs + (1-zs)*(1-ps)
-    switch0 = (1-zs)*ps + zs*(1-qs)
+    switch1 = qs*zs1 + (1-zs1)*(1-ps)
+    switch0 = (1-zs1)*ps + zs1*(1-qs)
     
     #     zs = zz[t+1,]
     pp = lefts[k]*switch1/weight[k]
