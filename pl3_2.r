@@ -1,4 +1,11 @@
 library(msm)
+# library(foreach)
+# library(doParallel)
+# registerDoParallel()
+Rprof(filename = "Rprof.out", append = FALSE, interval = 0.02,
+      memory.profiling = FALSE)
+Rprof(append = TRUE)
+# registerDoParallel()
 svm.pl = function(y,alphas,betas,tau2s,ps,qs,xs,zs){#,b0,B0,c0,d0){
   n      = length(y)
   
@@ -50,7 +57,7 @@ svm.pl = function(y,alphas,betas,tau2s,ps,qs,xs,zs){#,b0,B0,c0,d0){
   for (t in 1:n){
 #     print(t)
     #print(t)
-    mus1    = matrix(alphas+gammas+betas*xs,N,nmix)
+#     mus1    = matrix(alphas+gammas+betas*xs,N,nmix)
     mus    = matrix(alphas+betas*xs,N,nmix)
     #     print(mus[1,])
     #     scan(n=1)
@@ -58,20 +65,20 @@ svm.pl = function(y,alphas,betas,tau2s,ps,qs,xs,zs){#,b0,B0,c0,d0){
     
     zero.index= zs == 0
     one.index = zs == 1
-    
-    
+#     
+#     
     switch1 = qs*one.index + zero.index*(1-ps)
     switch0 = 1-switch1 #(1-zs)*ps + zs*(1-qs)
-    left = q*(dnorm(z[t],mus1+mu,sqrt(sig2+tau2s)))
+    left = q*(dnorm(z[t],mus+gammas+mu,sqrt(sig2+tau2s)))
     right = q*(dnorm(z[t],mus+mu,sqrt(sig2+tau2s)))
     probs = left*switch1+right*switch0
-    lefts = apply(left,1,sum)
-    rights = apply(right,1,sum)
-    weight = lefts*switch1+rights*switch0
+#     lefts = apply(left,1,sum)
+#     rights = apply(right,1,sum)
+#     weight = lefts*switch1+rights*switch0
     
-#     probs = q*(dnorm(z[t],mus+mu,sqrt(sig2+tau2s))*(qs*zs+(1-zs)*(1-ps)) + dnorm(z[t],mus1+mu,sqrt(sig2+tau2s))*((1-zs)*ps+zs*(1-qs)))
+#     probs = q*(dnorm(z[t],mus1+mu,sqrt(sig2+tau2s))*(qs*zs+(1-zs)*(1-ps)) + dnorm(z[t],mus+mu,sqrt(sig2+tau2s))*((1-zs)*ps+zs*(1-qs)))
     
-#     weight = apply(probs,1,sum)
+    weight = apply(probs,1,sum)
     k      = sample(1:N,size=N,replace=TRUE,prob=weight)
     #     print(probs[1,])
     #     scan(n=1)
@@ -123,9 +130,10 @@ svm.pl = function(y,alphas,betas,tau2s,ps,qs,xs,zs){#,b0,B0,c0,d0){
     zs    = zs+ rbinom(N,1,qs)*one.index
     
     mus = matrix(alphas+gammas*zs+betas*xs1,N,nmix)
+#     mus = mus+gammas*zs
     probs = q*(dnorm(z[t],mus+mu,sqrt(sig2+tau2s)))
     means  = vars*((z[t]-mu)/sig2 + mus/tau2ss)
-    for (i in 1:N){
+    for (i in 1:N) { 
       comp  = sample(1:nmix,size=1,prob=probs[i,])
       xs[i] = rnorm(1,means[i,comp],sds[i,comp])
     }
@@ -199,8 +207,8 @@ svm.pl = function(y,alphas,betas,tau2s,ps,qs,xs,zs){#,b0,B0,c0,d0){
     #     gammas = rtnorm(N,mean=b2,lower=0)
     betas  = b3 + L31*norm[,1] + L32 * norm[,2] + L33 * norm[,3]
     
-    gamma.mean = b2 - 1/s[,4]*(s[,2]*(alphas-b1)+s[,5]*(betas-b3))
-    gammas = rtnorm(N,gamma.mean,sd = sqrt(tau2s/s[,4]),lower=0)
+#     gamma.mean = b2 - 1/s[,4]*(s[,2]*(alphas-b1)+s[,5]*(betas-b3))
+#     gammas = rtnorm(N,gamma.mean,sd = sqrt(tau2s/s[,4]),lower=0)
     
     ps = rbeta(N,s[,12]+1,s[,13]+1)
     qs = rbeta(N,s[,15]+1,s[,14]+1)
@@ -458,11 +466,11 @@ PL = function(y,alphas,betas,tau2s,ps,qs,xs,zs){
 }
 
 # Simulated data
-# set.seed(98765)
-n     =  300
+set.seed(98765)
+n     =  500
 alpha =  -1
-gamma = 1.5
-beta  =  0.5
+gamma = 1.2
+beta  =  0.55
 tau2  =  .3
 sig2  =  1.0
 tau   = sqrt(tau2)
@@ -474,7 +482,10 @@ S = rep(0,n+1)
 true  = c(alpha,gamma,beta,tau2,p0,q0)
 names = c("alpha","gamma","beta","tau2","p","q")
 
-
+pa = 9
+pb = 1
+qa = 9
+qb = 1
 for (t in 2:(n+1))
   {
   if (S[t-1] == 0)
@@ -487,8 +498,8 @@ x = x[2:(n+1)]
 y = rnorm(n,0,exp(x/2))
 # print(S)
 par(mfrow=c(1,1))
-plot(y,ylim=range(x,y),xlab="Time",ylab="",main="",pch=16)
-lines(x,col=2,lwd=2)
+# plot(y,ylim=range(x,y),xlab="Time",ylab="",main="",pch=16)
+# lines(x,col=2,lwd=2)
 
 # data = read.csv('OILPRICE.csv')
 # prices = data[,2]
@@ -513,7 +524,7 @@ sB0   = sqrt(B0)
 
 # ONE LONG PL FILTER
 # ------------------
-# set.seed(246521)
+set.seed(246521)
 N      = 10000
 xs     = rnorm(N,m0,sC0)
 zs = rbinom(N,1,.5)
@@ -522,20 +533,22 @@ taus   = sqrt(tau2s)
 alphas = rnorm(N,b0[1],taus*sB0[1])
 gammas = rtnorm(N,b0[2],taus*sB0[2],lower=0)
 betas  = rnorm(N,b0[3],taus*sB0[3])
-ps  = rbeta(N,1,1)
-qs = rbeta(N,1,1)
+ps  = rbeta(N,pa,pb)
+qs = rbeta(N,qa,qb)
 pars   = cbind(alphas,gammas,betas,tau2s,ps,qs)
 par(mfrow=c(2,2))
-for (i in 1:4){
-  hist(pars[,i],prob=TRUE,xlab="",main=names[i])
-  abline(v=true[i],col=2)
-}
+# for (i in 1:4){
+#   hist(pars[,i],prob=TRUE,xlab="",main=names[i])
+#   abline(v=true[i],col=2)
+# }
 print(date())
 # plm    = PL(y,alphas,betas,tau2s,ps,qs,xs,zs)
 out   = svm.pl(y,alphas,betas,tau2s,ps,qs,xs,zs)
 plm = out$quants
 
 print(date())
+Rprof(NULL)
+
 cols = c(grey(0.5),1,grey(0.5))
 ind  = 20:length(y)
 n1   = length(ind)
@@ -556,8 +569,8 @@ lines(S[2:(n+1)],col='blue',ylim=c(-1,2),lwd=2,lty=2)
 
 # ts.plot(out$zmean)
 # par(mfrow=c(1,1))
-# ts.plot(plm[,7,2],xlab="",ylab="",main="states",col=1,ylim=c(-1,2),lwd=2)
-# points(S[2:(n+1)],col='red',ylim=c(-1,2),lwd=1)
+# ts.plot(round(out$zmean),xlab="",ylab="",main="states",col=1,ylim=c(-1,2),lwd=2)
+# lines(S[2:(n+1)],col='blue',ylim=c(-1,2),lwd=2,lty=2)
 
 
 # Particle filters

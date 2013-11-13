@@ -71,7 +71,8 @@ svm.pl = function(y,alphas,betas,tau2s,xs){#,b0,B0,c0,d0){
     quants[t,3,] = quantile(tau2s,c(0.05,0.5,0.95))
     quants[t,4,] = quantile(exp(xs/2),c(0.05,0.5,0.95))
   }
-  return(quants)
+  hists = list(hist(alphas),hist(betas),hist(tau2s))
+  return(list(quants=quants,hists=hists))
 }
 PL = function(y,alphas,betas,tau2s,xs){
   n      = length(y)
@@ -182,10 +183,10 @@ PL = function(y,alphas,betas,tau2s,xs){
 
 # Simulated data
 # set.seed(98765)
-n     =  1000
+n     =  2
 alpha =  -.2
-beta  =  0.9
-tau2  =  .15
+beta  =  0.5
+tau2  =  .4
 sig2  =  1.0
 tau   = sqrt(tau2)
 x     = rep(alpha/(1-beta),n+1)
@@ -224,7 +225,7 @@ sB0   = sqrt(B0)
 # ONE LONG PL FILTER
 # ------------------
 # set.seed(246521)
-N      = 100000
+N      = 10000
 xs     = rnorm(N,m0,sC0)
 tau2s  = 1/rgamma(N,c0/2,d0/2)
 taus   = sqrt(tau2s)
@@ -232,14 +233,14 @@ alphas = rnorm(N,b0[1],taus*sB0[1])
 betas  = rnorm(N,b0[2],taus*sB0[2])
 
 pars   = cbind(alphas,betas,tau2s)
-par(mfrow=c(3,1))
-for (i in 1:3){
-  hist(pars[,i],prob=TRUE,xlab="",main=names[i])
-  abline(v=true[i],col=2)
-}
+# par(mfrow=c(3,1))
+# for (i in 1:3){
+#   hist(pars[,i],prob=TRUE,xlab="",main=names[i])
+#   abline(v=true[i],col=2)
+# }
 print(date())
-plm    = PL(y,alphas,betas,tau2s,xs)
-# plm    = svm.pl(y,alphas,betas,tau2s,xs)
+# plm    = PL(y,alphas,betas,tau2s,xs)
+plm    = svm.pl(y,alphas,betas,tau2s,xs)
 print(date())
 cols = c(grey(0.5),1,grey(0.5))
 ind  = 10:n
@@ -256,79 +257,79 @@ for (i in 1:4){
 
 # Particle filters
 # ----------------
-set.seed(246521)
+# set.seed(246521)
 N    = 1000
-nsim = 100
+nsim = 30
 a    = 0.95
 qs   = array(0,c(nsim,n,4,3))
-print(date())
-for (s in 1:nsim){
-  print(s)
-  xs         = rnorm(N,m0,sC0)
-  tau2s      = 1/rgamma(N,c0/2,d0/2)
-  taus       = sqrt(tau2s)
-  alphas     = rnorm(N,b0[1],taus*sB0[1])
-  betas      = rnorm(N,b0[2],taus*sB0[2])
-#   qs[1,s,,,] = LW(y,alphas,betas,tau2s,sig2s,xs,a)
-#   qs[2,s,,,] = Storvik(y,alphas,betas,tau2s,sig2s,xs)
-  qs[s,,,] = PL(y,alphas,betas,tau2s,xs) 
-
-}
-print(date())
-library(foreach)
-library(doParallel)
-registerDoParallel()
-print(date())
-qs1 = foreach(s=1:nsim) %dopar%{
-  
-  xs         = rnorm(N,m0,sC0)
-  tau2s      = 1/rgamma(N,c0/2,d0/2)
-  taus       = sqrt(tau2s)
-  alphas     = rnorm(N,b0[1],taus*sB0[1])
-  betas      = rnorm(N,b0[2],taus*sB0[2])
-  
-  PL(y,alphas,betas,tau2s,xs) 
-}
-for(s in 1:nsim)  
-  qs[s,,,] = qs1[[s]]
+# print(date())
+# for (s in 1:nsim){
+#   print(s)
+#   xs         = rnorm(N,m0,sC0)
+#   tau2s      = 1/rgamma(N,c0/2,d0/2)
+#   taus       = sqrt(tau2s)
+#   alphas     = rnorm(N,b0[1],taus*sB0[1])
+#   betas      = rnorm(N,b0[2],taus*sB0[2])
+# #   qs[1,s,,,] = LW(y,alphas,betas,tau2s,sig2s,xs,a)
+# #   qs[2,s,,,] = Storvik(y,alphas,betas,tau2s,sig2s,xs)
+#   qs[s,,,] = PL(y,alphas,betas,tau2s,xs) 
+# 
+# }
+# print(date())
+# library(foreach)
+# library(doParallel)
+# registerDoParallel()
+# print(date())
+# qs1 = foreach(s=1:nsim) %dopar%{
+#   
+#   xs         = rnorm(N,m0,sC0)
+#   tau2s      = 1/rgamma(N,c0/2,d0/2)
+#   taus       = sqrt(tau2s)
+#   alphas     = rnorm(N,b0[1],taus*sB0[1])
+#   betas      = rnorm(N,b0[2],taus*sB0[2])
+#   
+#   svm.pl(y,alphas,betas,tau2s,xs) 
+# }
+# for(s in 1:nsim)  
+#   qs[s,,,] = qs1[[s]]
 
 
 print(date())
 # 
 # 
-
-cols = c(grey(0.5),1,grey(0.5))
-ind  = 10:n
-n1   = length(ind)
-par(mfrow=c(2,2))
-for (i in 1:4){
-  ts.plot(qs[50,,i,],xlab="",ylab="",main=names[i],col=cols,ylim=range(plm[ind,i,]))
-  abline(h=true[i],lty=2)
-}
-
-
-# Mean square error
-quants = c("2.5th","50th","97.5th")
-filter = "PL"
-mse    = array(0,c(n1,4,3))
-  for (k in 1:4) 
-    for (i in 1:nsim) 
-      mse[,k,]=mse[,k,]+(qs[i,ind,k,]-plm[ind,k,])^2
-sq.mse = sqrt(mse/nsim)  
+# hist(qs[,n,1,2])
+# cols = c(grey(0.5),1,grey(0.5))
+# ind  = 10:n
+# n1   = length(ind)
+# par(mfrow=c(2,2))
+# for (i in 1:4){
+#   ts.plot(qs[50,,i,],xlab="",ylab="",main=names[i],col=cols,ylim=range(plm[ind,i,]))
+#   abline(h=true[i],lty=2)
+# }
 
 
-cols = c(grey(0.75),grey(0.5),grey(0.75))
-#cols = c(3,2,5)
-par(mfrow=c(1,1))
-for (k in 1:3){
-  L = min(qs[,ind,k,])
-  U = max(qs[,ind,k,])
-
-    plot(qs[1,,k,1],ylab=names[k],xlab="Time",main=filter,ylim=c(L,U),type="l",col=cols[1])
-    for (i in c(1,3,2)) for (j in 1:nsim) lines(qs[j,,k,i],col=cols[i])
-    for (i in c(1,3,2)) lines(plm[,k,i],lwd=1,col=1)  
-  
-}  
+# # Mean square error
+# quants = c("2.5th","50th","97.5th")
+# filter = "PL"
+# mse    = array(0,c(n1,4,3))
+#   for (k in 1:4) 
+#     for (i in 1:nsim) 
+#       mse[,k,]=mse[,k,]+(qs[i,ind,k,]-plm[ind,k,])^2
+# sq.mse = sqrt(mse/nsim)  
+# 
+# 
+# cols = c(grey(0.75),grey(0.5),grey(0.75))
+# #cols = c(3,2,5)
+# par(mfrow=c(1,1))
+# for (k in 1:3){
+#   L = min(qs[,ind,k,])
+#   U = max(qs[,ind,k,])
+# 
+#     plot(qs[1,,k,1],ylab=names[k],xlab="Time",main=filter,ylim=c(L,U),type="l",col=cols[1])
+#     for (i in c(1,3,2)) for (j in 1:nsim) lines(qs[j,,k,i],col=cols[i])
+#     for (i in c(1,3,2)) lines(plm[,k,i],lwd=1,col=1)  
+#   
+# }  
 
 # 
 # 
