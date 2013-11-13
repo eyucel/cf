@@ -224,8 +224,10 @@ svm.pl = function(y,alphas,betas,tau2s,ps,qs,xs,zs){#,b0,B0,c0,d0){
     quants[t,8,] = quantile(exp(xs/2),c(0.025,0.5,0.975))
     zmean[t] =  mean(zs)
   }
+
   hists = list(hist(alphas),hist(gammas),hist(betas),hist(tau2s),hist(ps),hist(qs))
   return(list(quants=quants,zmean=zmean,hists=hists))
+
 }
 PL = function(y,alphas,betas,tau2s,ps,qs,xs,zs){
   n      = length(y)
@@ -470,7 +472,9 @@ PL = function(y,alphas,betas,tau2s,ps,qs,xs,zs){
 set.seed(98765)
 n     =  500
 alpha =  -1
+
 gamma = 1.5
+
 beta  =  0.55
 tau2  =  .3
 sig2  =  1.0
@@ -483,9 +487,12 @@ S = rep(0,n+1)
 true  = c(alpha,gamma,beta,tau2,p0,q0)
 names = c("alpha","gamma","beta","tau2","p","q")
 
+
 pa = 1
 pb = 1
 qa = 1
+
+
 qb = 1
 for (t in 2:(n+1))
   {
@@ -525,7 +532,9 @@ sB0   = sqrt(B0)
 
 # ONE LONG PL FILTER
 # ------------------
+
 # set.seed(246521)
+
 N      = 10000
 xs     = rnorm(N,m0,sC0)
 zs = rbinom(N,1,.5)
@@ -557,8 +566,10 @@ par(mfrow=c(3,2))
 for (i in 1:6){
   ts.plot(plm[ind,i,],xlab="",ylab="",main=names[i],col=cols,ylim=range(plm[ind,i,]))
   abline(h=true[i],lty=2)
+
   plot(out$hists[[i]])
   abline(v=true[i],lty=1,col='red')
+
 }
 
 
