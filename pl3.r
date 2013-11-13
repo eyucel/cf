@@ -118,14 +118,6 @@ svm.pl = function(y,alphas,betas,tau2s,ps,qs,xs,zs){#,b0,B0,c0,d0){
 #     pp = lefts[k]*switch1/weight[k]
 #     qq = rights[k]*switch0/weight[k]
     
-    
-    #     print(sum(pp<1))
-    #     print(sum(qq<1))
-    
-
-    
-    #     scan(n=1)
-    #     print(zs)
     tau2ss = matrix(tau2s,N,nmix)
     vars   = 1/(1/sig2+1/tau2ss)
     sds    = sqrt(vars)
@@ -135,7 +127,8 @@ svm.pl = function(y,alphas,betas,tau2s,ps,qs,xs,zs){#,b0,B0,c0,d0){
   #     zs = rbinom(N,1,1-ps)*zero.index    
   #     zs = zs+rbinom(N,1,qs)*one.index    
 #     mus.temp = matrix(alphas+gammas*zs+betas*xs1,N,nmix)
-    means  = vars*((z[t]-mu)/sig2 + mus/tau2ss)
+    mus = matrix(alphas+betas*xs1,N,nmix)
+    means  = vars*((z[t]-mu-gammas*zs1)/sig2 + mus/tau2ss)
     for (i in 1:N){
       comp  = sample(1:nmix,size=1,prob=probs[i,])
       xs[i] = rnorm(1,means[i,comp],sds[i,comp])
@@ -154,6 +147,10 @@ svm.pl = function(y,alphas,betas,tau2s,ps,qs,xs,zs){#,b0,B0,c0,d0){
     s[,9]  = so[,9] + xs*xs1
     s[,10]  = so[,10] + 1
     
+<<<<<<< HEAD
+=======
+
+>>>>>>> da96523bbf327eef50172dd9cb6d01405108667a
     zero.index = zo == 0
     one.index = zo == 1    
     zero.index.2 = zs1 == 0
@@ -225,7 +222,7 @@ svm.pl = function(y,alphas,betas,tau2s,ps,qs,xs,zs){#,b0,B0,c0,d0){
     quants[t,4,] = quantile(tau2s,c(0.025,0.5,0.975))  
     quants[t,5,] = quantile(ps,c(0.025,0.5,0.975))  
     quants[t,6,] = quantile(qs,c(0.025,0.5,0.975))  
-    quants[t,7,] = quantile(zs,c(0.025,0.5,0.975))
+    quants[t,7,] = quantile(zs1,c(0.025,0.5,0.975))
     quants[t,8,] = quantile(exp(xs/2),c(0.025,0.5,0.975))
     zmean[t] =  mean(zs1)
   }
@@ -474,11 +471,11 @@ PL = function(y,alphas,betas,tau2s,ps,qs,xs,zs){
 
 # Simulated data
 # set.seed(98765)
-n     =  500
+n     =  200
 alpha =  -1
 gamma = 1.5
 beta  =  0.5
-tau2  =  .2
+tau2  =  .3
 #sig2  =  1.0
 tau   = sqrt(tau2)
 p0 = .99
@@ -561,15 +558,15 @@ for (i in 1:6){
   abline(h=true[i],lty=2)
 }
 par(mfrow=c(1,1))
-ts.plot(plm[ind,7,],xlab="",ylab="",main=names[i],col=cols,ylim=range(plm[ind,i,]))
+# ts.plot(plm[ind,7,],xlab="",ylab="",main=names[i],col=cols,ylim=range(plm[ind,i,]))
 # par(mfrow=c(1,1))
 # ts.plot(cbind(2*plm[,8,2],-2*plm[,8,2]))
 # lines(returns*100,col='red')
 
-ts.plot(out$zmean)
+# ts.plot(out$zmean)
 par(mfrow=c(1,1))
 ts.plot(plm[,7,2],xlab="",ylab="",main="states",col=1,ylim=c(-1,2),lwd=2)
-points(S[2:(n+1)],col='red',ylim=c(-1,2),lwd=1)
+lines(S[2:(n+1)],col='red',ylim=c(-1,2),lwd=1)
 
 
 # Particle filters
